@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings version="1">
-    <section id="plugin.video.stalkervod">
+    <section id="plugin.video.stalkervod.tmdb">
         <category id="portal" label="32001" help="">
             <group id="server" label="32002">
                 <setting id="server_address" type="string" label="32003" help="">
@@ -66,7 +66,7 @@
         </category>
     </section>
 
-    <section id="plugin.video.stalkervod.tmdb">
+    <section id="plugin.video.stalkervod.tmdb.tmdb">
         <category id="tmdb" label="32100">
             <group id="tmdb_general" label="32101">
                 <setting id="tmdb_enabled" type="boolean" label="32102" help="32103">

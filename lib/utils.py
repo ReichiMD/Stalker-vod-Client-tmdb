@@ -50,7 +50,7 @@ def upnext_signal(next_info):
     from base64 import b64encode
     from json import dumps
     data = [to_unicode(b64encode(dumps(next_info).encode()))]
-    notify(sender='plugin.video.stalkervod.SIGNAL', message='upnext_data', data=data)
+    notify(sender='plugin.video.stalkervod.tmdb.SIGNAL', message='upnext_data', data=data)
 
 
 def notify(sender, message, data):
