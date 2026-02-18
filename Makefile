@@ -23,6 +23,18 @@ test: check
 	@coverage xml --omit="tests/*,test_*.py"
 	@coverage report --omit="tests/*,test_*.py"
 
+package:
+	@echo "Building new package (without tests)"
+	@rm -rf $(build_dir)
+	@rm -rf resources/tokens
+	@find . -name '*.py[cod]' -type f -delete
+	@find . -name '__pycache__' -type d -delete
+	@mkdir -p $(build_dir)/$(name)
+	@cp -r $(include_files) ./build/$(name)
+	@cd $(build_dir); zip -r $(zip_name) $(name)/
+	@rm -rf $(build_dir)/$(name)
+	@echo "Successfully wrote package as: $(CURR_PROJECT_DIR)/$(build_dir)/$(zip_name)"
+
 build: test
 	@echo "Building new package"
 	@rm -rf $(build_dir)
