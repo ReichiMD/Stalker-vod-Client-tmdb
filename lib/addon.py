@@ -15,12 +15,22 @@ from .loggers import Logger
 from .tmdb import TmdbClient
 
 
+_tmdb_client_singleton = None
+
+
 def _get_tmdb_client():
-    """Return a TmdbClient if TMDB is enabled and an API key is set, else None."""
+    """Return a TmdbClient singleton if TMDB is enabled and an API key is set, else None.
+
+    Reuses the same instance within one plugin run so the disk cache is only
+    loaded once per page render instead of once per list item.
+    """
+    global _tmdb_client_singleton
     cfg = G.tmdb_config
-    if cfg.enabled and cfg.api_key:
-        return TmdbClient(cfg.api_key, cfg.language)
-    return None
+    if not cfg.enabled or not cfg.api_key:
+        return None
+    if _tmdb_client_singleton is None:
+        _tmdb_client_singleton = TmdbClient(cfg.api_key, cfg.language)
+    return _tmdb_client_singleton
 
 
 def _apply_tmdb_movie(list_item, video_info, title, year, stalker_poster):
@@ -382,6 +392,10 @@ class StalkerAddon:
             StalkerAddon.__add_navigation_items(params, videos, directory_items)
             item_count = item_count + 2
         xbmcplugin.addDirectoryItems(G.get_handle(), directory_items, item_count)
+        # Persist TMDB cache once for all films (instead of once per film)
+        tmdb = _get_tmdb_client()
+        if tmdb:
+            tmdb.flush()
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=update_listing == 'True', cacheToDisc=False)
 
     @staticmethod
@@ -436,6 +450,10 @@ class StalkerAddon:
             StalkerAddon.__add_navigation_items(params, series, directory_items)
             item_count = item_count + 2
         xbmcplugin.addDirectoryItems(G.get_handle(), directory_items, item_count)
+        # Persist TMDB cache once for all series (instead of once per entry)
+        tmdb = _get_tmdb_client()
+        if tmdb:
+            tmdb.flush()
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=update_listing == 'True',
                                   cacheToDisc=False)
 

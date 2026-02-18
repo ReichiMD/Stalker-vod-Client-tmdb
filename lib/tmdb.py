@@ -178,10 +178,15 @@ class TmdbClient:
             return None
         return entry.get('data')  # may itself be None (negative cache)
 
+    def flush(self):
+        """Write the in-memory cache to disk once. Call this after processing a full listing.
+        This avoids N separate disk writes (one per film) and does a single write instead."""
+        if self.__cache_loaded:
+            self.__persist_cache()
+
     def __to_cache(self, key, data):
-        """Store data (or None for negative result) in cache"""
+        """Store data (or None for negative result) in memory only. Call flush() to persist."""
         self.__cache[key] = {'data': data, 'ts': time.time()}
-        self.__persist_cache()
 
     def __load_cache(self):
         """Load JSON cache from disk"""
