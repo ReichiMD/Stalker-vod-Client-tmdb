@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Build output (Kodi ZIP)
+build/
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+.pytest_cache/
+test-results/
+tests/userdata/addon_data/
+
+# Addon runtime data
+resources/tokens/
+
+# Environments
+.env
+.venv
+
+# IDE
+.idea
+.DS_Store
