@@ -1,0 +1,36 @@
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.1" provider-name="ReichiMD">
+	<requires>
+		<import addon="xbmc.python" version="3.0.1"/>
+		<import addon="script.module.requests" version="2.27.1"/>
+	</requires>
+	<extension point="xbmc.python.pluginsource" library="addon_entry.py">
+		<provides>video</provides>
+	</extension>
+	<extension point="xbmc.service" library="service_entry.py"/>
+	<extension point="xbmc.addon.metadata">
+		<reuselanguageinvoker>true</reuselanguageinvoker>
+		<platform>all</platform>
+		<summary lang="en_GB">Stalker VOD Client with TMDB metadata</summary>
+		<description lang="en_GB">Kodi Stalker client for accessing on demand videos and channels from Stalker middleware. Extended with TMDB metadata (posters, fanart, ratings).</description>
+		<license>GPL-3.0-or-later</license>
+		<language>en</language>
+		<source>https://github.com/ReichiMD/Stalker-vod-Client-tmdb</source>
+		<website>https://github.com/ReichiMD/Stalker-vod-Client-tmdb</website>
+		<assets>
+			<icon>resources/media/icon.png</icon>
+			<screenshot>resources/media/screenshot_1.png</screenshot>
+			<screenshot>resources/media/screenshot_2.png</screenshot>
+			<screenshot>resources/media/screenshot_3.png</screenshot>
+			<screenshot>resources/media/screenshot_4.png</screenshot>
+		</assets>
+		<news>
+v0.0.1  (2026-02-18)
+- Fork of plugin.video.stalkervod v1.2.0 by rickeylohia (GPL-3.0)
+- Added TMDB metadata integration: posters, fanart, plot and ratings
+  for VOD and Series listings via The Movie Database API.
+- New settings tab: TMDB API key, language and enable/disable toggle.
+- Results cached locally (30-day expiry) to minimise API calls.
+- Sets tmdb unique ID on ListItems for TMDb Helper addon compatibility.
+		</news>
+	</extension>
+</addon>
