@@ -392,6 +392,10 @@ class StalkerAddon:
             StalkerAddon.__add_navigation_items(params, videos, directory_items)
             item_count = item_count + 2
         xbmcplugin.addDirectoryItems(G.get_handle(), directory_items, item_count)
+        # Persist TMDB cache once for all films (instead of once per film)
+        tmdb = _get_tmdb_client()
+        if tmdb:
+            tmdb.flush()
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=update_listing == 'True', cacheToDisc=False)
 
     @staticmethod
@@ -446,6 +450,10 @@ class StalkerAddon:
             StalkerAddon.__add_navigation_items(params, series, directory_items)
             item_count = item_count + 2
         xbmcplugin.addDirectoryItems(G.get_handle(), directory_items, item_count)
+        # Persist TMDB cache once for all series (instead of once per entry)
+        tmdb = _get_tmdb_client()
+        if tmdb:
+            tmdb.flush()
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=update_listing == 'True',
                                   cacheToDisc=False)
 

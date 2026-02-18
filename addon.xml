@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.1" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.2" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,12 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.0.2  (2026-02-18)
+- Performance: TmdbClient is now a singleton per plugin run – cache file
+  is loaded from disk once instead of once per list item.
+- Performance: TMDB cache writes are now batched – one disk write per
+  listing page instead of one per film.
+
 v0.0.1  (2026-02-18)
 - Fork of plugin.video.stalkervod v1.2.0 by rickeylohia (GPL-3.0)
 - Added TMDB metadata integration: posters, fanart, plot and ratings

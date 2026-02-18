@@ -96,6 +96,57 @@ Seiten-Darstellung (z.B. 20 Filme). Das ist genau richtig: Cache 1x laden, 20x n
 
 **Ergebnis:** Cache-Disk-I/O reduziert von 40 Operationen auf 1 Lese- + N Schreib-Operationen.
 
+### Performance-Fix 2: Batch-Flush (`flush()`)
+
+**Problem (alt):** `__to_cache()` rief sofort `__persist_cache()` auf → 1 Disk-Write pro Film.
+Bei 20 Filmen, von denen 20 neu sind: 20 Schreiboperationen auf dieselbe JSON-Datei.
+
+**Fix:** `__to_cache()` schreibt nur noch in den In-Memory-Dict.
+Neues `flush()`-Method schreibt einmalig am Ende des Listings.
+`addon.py` ruft `tmdb.flush()` auf direkt vor `endOfDirectory()`.
+
+```python
+# tmdb.py
+def flush(self):
+    if self.__cache_loaded:
+        self.__persist_cache()
+
+def __to_cache(self, key, data):
+    self.__cache[key] = {'data': data, 'ts': time.time()}
+    # Kein persist hier – wird von flush() am Ende gemacht
+```
+
+**Warum nicht "beim Film-Schauen" schreiben?**
+Kodi startet für jede Navigation einen **neuen Prozess**. Listing und Playback sind völlig
+getrennte Prozesse. Am Prozessende geht der RAM verloren. Es ist technisch unmöglich, Daten
+aus dem Listing-Prozess in den späteren Play-Prozess zu übertragen.
+
+**Ergebnis:** N Schreib-Ops → 1 Schreib-Op pro Listing. Bei 20 neuen Filmen: 19 Writes gespart.
+
+### Vergleich alternativer Metadaten-Anbieter
+
+| Anbieter | Geschwindigkeit | Kosten | Qualität | Kodi-tauglich? |
+|---|---|---|---|---|
+| **TMDB** (aktuell) | ~200–500ms | Kostenlos | Sehr gut, viele Sprachen | Ja, Standard |
+| OMDb (IMDb-basiert) | ~200–400ms | Kostenlos (1000/Tag) | Gut, weniger nicht-EN | Ja |
+| Trakt.tv | ~300–600ms | Kostenlos | Gut, kein Fanart | Ja |
+| MDBList | ~100–300ms | Kostenlos bis Limit | Aggregiert mehrere Quellen | Ja |
+
+**Fazit:** TMDB ist die richtige Wahl. Andere Anbieter sind nicht wesentlich schneller.
+Der Flaschenhals ist die Netzwerklatenz, nicht der Anbieter selbst.
+
+### FSK-Altersfreigaben von TMDB holen
+
+TMDB hat Altersfreigaben (DE = FSK), aber **nicht im Such-Endpunkt** (`/search/movie`).
+Es wäre ein **zweiter API-Call** nötig: `/movie/{id}/release_dates`.
+
+**Ablauf mit FSK:**
+1. `/search/movie` → Titel finden, `id` holen (~300ms)
+2. `/movie/{id}?append_to_response=release_dates` → FSK aus DE-Zertifizierung lesen (~300ms)
+
+Das würde die Ladezeit für unkachet Filme verdoppeln (~600ms statt ~300ms pro Film).
+→ Vorerst nicht implementiert. Bei Bedarf als optionales Setting umsetzbar.
+
 ---
 
 ## Bekannte Bugs & Fixes (heute gelöst)
@@ -167,5 +218,5 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 |---|---|---|
 | `fanart`/`votes` weglassen (optional per Setting) | mittel | weniger Kodi-Bandbreite |
 | Timeout für TMDB-Calls kürzen (aktuell 10s → 3s) | klein | hängt nicht 10s bei Offline-TMDB |
-| Cache-Schreiboperationen bündeln (erst am Ende) | mittel | schneller bei leerem Cache |
+| FSK-Altersfreigaben (zweiter API-Call pro Film nötig) | mittel | verdoppelt Ladezeit bei leerem Cache |
 | Parallele TMDB-Requests (Threading) | groß | deutlich schneller beim ersten Laden |
