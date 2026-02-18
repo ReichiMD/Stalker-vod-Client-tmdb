@@ -66,7 +66,7 @@
         </category>
     </section>
 
-    <section id="plugin.video.stalkervod.tmdb.tmdb">
+    <section id="plugin.video.stalkervod.tmdb">
         <category id="tmdb" label="32100">
             <group id="tmdb_general" label="32101">
                 <setting id="tmdb_enabled" type="boolean" label="32102" help="32103">
