@@ -54,7 +54,10 @@ def _apply_tmdb_to_item(list_item, video_info, info, stalker_poster):
         video_info.setPlot(info['plot'])
         video_info.setPlotOutline(info['plot'])
     if info.get('rating'):
-        video_info.setRating(float(info['rating']), votes=info.get('votes', 0), type='tmdb', defaultt=True)
+        try:
+            video_info.setRating('tmdb', float(info['rating']), info.get('votes', 0), True)
+        except TypeError:
+            pass
     if info.get('year') and info['year'] > 0:
         video_info.setYear(info['year'])
     poster = info.get('poster') or stalker_poster
