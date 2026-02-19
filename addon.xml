@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.4" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.5" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,12 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.0.5  (2026-02-19)
+- Fix: "Data management" group was invisible in Kodi settings. Root cause:
+  type="action" with <action>RunPlugin()</action> is not valid in Kodi 21
+  settings format version="1". The refresh trigger is now a boolean toggle
+  that resets itself automatically after the service runs the refresh.
+
 v0.0.4  (2026-02-19)
 - Initial setup wizard: after entering server address and MAC address the
   addon automatically asks to pre-fetch all VOD data (Yes/No dialog).

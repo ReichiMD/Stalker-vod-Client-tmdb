@@ -105,12 +105,12 @@ msgid "Loads all content in one go (longer initial load). Recommended when TMDB 
 msgstr "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
 
 msgctxt "#32110"
-msgid "Refresh all data"
-msgstr "Refresh all data"
+msgid "Refresh all data (activate to start)"
+msgstr "Refresh all data (activate to start)"
 
 msgctxt "#32111"
-msgid "Fetches all VOD and Series categories from the server and pre-fills the TMDB metadata cache. Run once to make all subsequent browsing instant."
-msgstr "Fetches all VOD and Series categories from the server and pre-fills the TMDB metadata cache. Run once to make all subsequent browsing instant."
+msgid "Toggle ON to fetch all VOD and Series categories and pre-fill the TMDB cache. The toggle resets itself automatically when done."
+msgstr "Toggle ON to fetch all VOD and Series categories and pre-fill the TMDB cache. The toggle resets itself automatically when done."
 
 msgctxt "#32112"
 msgid "Data management"

@@ -33,8 +33,20 @@ class BackgroundService(Monitor):
         Logger.debug('Service stopped')
 
     def onSettingsChanged(self):  # pylint: disable=invalid-name
-        """Detect first-time credential setup and offer to pre-fetch all VOD data."""
+        """React to setting changes:
+        - Manual refresh toggle: run refresh_all and reset the toggle.
+        - First-time setup: offer to pre-fetch all data when credentials are entered.
+        """
         addon = xbmcaddon.Addon()
+
+        # --- Manual refresh button (boolean toggle workaround) ---
+        if addon.getSetting('refresh_all_data') == 'true':
+            addon.setSetting('refresh_all_data', 'false')
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)')
+            return
+
+        # --- First-time setup wizard ---
         server = addon.getSetting('server_address')
         mac = addon.getSetting('mac_address')
         if not server or not mac:

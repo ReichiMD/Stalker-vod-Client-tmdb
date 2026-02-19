@@ -292,7 +292,7 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 - Branch: `claude/tmdb-key-pagination-f4wb3`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.4.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.5.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 
 ### Zuletzt umgesetzte Features
@@ -300,9 +300,15 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 | Feature | Branch | Beschreibung |
 |---|---|---|
 | `load_all_pages` Setting | `claude/tmdb-key-pagination-f4wb3` | Alle Server-Seiten auf einmal laden (TiviMate-Stil) |
-| `refresh_all_data` Button | `claude/tmdb-key-pagination-f4wb3` | TMDB-Cache vorwärmen mit Fortschrittsbalken |
+| `refresh_all_data` Schalter | `claude/tmdb-key-pagination-f4wb3` | Schalter statt Button – Kodi 21 `version="1"` settings unterstützt `type="action"` mit `<action>`-Child nicht |
 | Ersteinrichtungs-Dialog | `claude/tmdb-key-pagination-f4wb3` | `onSettingsChanged` im Service erkennt erste Anmeldedaten-Eingabe → Ja/Nein-Dialog → startet `refresh_all` |
 | Deutsches UI | `claude/tmdb-key-pagination-f4wb3` | `resource.language.de_de/strings.po` – alle Settings auf Deutsch bei deutschem Kodi |
+
+### Bekanntes Kodi-21-Problem: `type="action"` in `settings version="1"`
+In Kodi 21 (Omega) mit `<settings version="1">` ist das `<action>RunPlugin()</action>` Child-Element
+von `type="action"` Settings **nicht valide**. Kodi ignoriert still das gesamte `<group>`-Element.
+**Workaround:** `type="boolean"` mit Toggle-Control. Service setzt den Wert zurück auf `false`
+und ruft `RunPlugin(...)` auf wenn er `true` detektiert. Funktioniert zuverlässig.
 
 ### Offene Verbesserungs-Ideen (noch nicht umgesetzt)
 

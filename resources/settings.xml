@@ -27,10 +27,10 @@
                     <control type="toggle" />
                 </setting>
 
-                <setting id="refresh_all_data" type="action" label="32110" help="32111">
+                <setting id="refresh_all_data" type="boolean" label="32110" help="32111">
                     <level>0</level>
-                    <action>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)</action>
-                    <control type="button" />
+                    <default>false</default>
+                    <control type="toggle" />
                 </setting>
             </group>
 
