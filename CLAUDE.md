@@ -30,6 +30,77 @@ das Addon herunterzuladen und in Kodi zu installieren. Ohne aktuelle ZIP ist die
 
 ---
 
+## ⚠️ KODI 21 (OMEGA) – BEKANNTE EINSCHRÄNKUNGEN & PFLICHT-WISSEN
+
+> **Diese Regeln MÜSSEN in jeder Session beachtet werden, sonst entstehen unsichtbare UI-Elemente.**
+
+### REGEL 1: Kein `type="action"` mit `<action>`-Child in `settings version="1"`
+
+**Problem:** In Kodi 21 (Omega) mit `<settings version="1">` ist das `<action>`-Tag
+als Child von `<setting type="action">` **nicht valide**. Kodi 21 ignoriert es still –
+und wirft dabei die **gesamte `<group>`** weg. Der Nutzer sieht gar nichts.
+
+```xml
+<!-- ❌ FUNKTIONIERT NICHT in Kodi 21 settings version="1" -->
+<setting id="my_button" type="action" label="32001">
+    <action>RunPlugin(plugin://...)</action>   <!-- ← dieser Tag killt die ganze Gruppe -->
+    <control type="button" />
+</setting>
+```
+
+**Workaround – IMMER SO MACHEN:**
+```xml
+<!-- ✅ KORREKT: boolean toggle als Auslöser -->
+<setting id="my_button" type="boolean" label="32001" help="32002">
+    <level>0</level>
+    <default>false</default>
+    <control type="toggle" />
+</setting>
+```
+
+Dazu im Service (`lib/service.py`) in `onSettingsChanged()`:
+```python
+addon = xbmcaddon.Addon()
+if addon.getSetting('my_button') == 'true':
+    addon.setSetting('my_button', 'false')   # sofort zurücksetzen
+    xbmc.executebuiltin('RunPlugin(plugin://...?action=do_something)')
+    return
+```
+
+**Warum funktioniert das?**
+- `type="boolean"` ist vollständig valide in allen Kodi-Versionen.
+- Kodi ruft `onSettingsChanged()` im Service auf, sobald der Nutzer den Schalter umlegt.
+- Der Service setzt den Wert sofort zurück auf `false` (der Schalter springt zurück).
+- Anschließend startet er `RunPlugin(...)` → der gewünschte Effekt tritt ein.
+
+### REGEL 2: Sprachdateien – immer BEIDE Dateien pflegen
+
+Wenn neue String-IDs hinzugefügt werden, **immer in beiden Dateien** eintragen:
+- `resources/language/resource.language.en_gb/strings.po` (Englisch – Fallback)
+- `resources/language/resource.language.de_de/strings.po` (Deutsch – primär für den Nutzer)
+
+Kodi lädt automatisch die passende Sprachdatei. Fehlt ein String, wird das `<group>`-
+oder `<setting>`-Element möglicherweise ausgeblendet (kein Fehler, nur leer/unsichtbar).
+
+### REGEL 3: `onSettingsChanged` wird bei JEDER Einstellungsänderung aufgerufen
+
+Nicht nur bei der Ersteinrichtung oder beim Refresh-Button. Jede Änderung einer beliebigen
+Einstellung feuert diesen Callback. Deshalb ist die **genaue Reihenfolge der Prüfungen** wichtig:
+
+```python
+def onSettingsChanged(self):
+    addon = xbmcaddon.Addon()
+    # 1. Zuerst: Refresh-Button prüfen (spezifisch, kein Server nötig)
+    if addon.getSetting('refresh_all_data') == 'true':
+        addon.setSetting('refresh_all_data', 'false')
+        xbmc.executebuiltin('RunPlugin(...?action=refresh_all)')
+        return   # ← return verhindert, dass der Ersteinrichtungs-Check ebenfalls läuft
+    # 2. Dann: Ersteinrichtungs-Check (nur wenn Server + MAC gesetzt und Flag nicht da)
+    ...
+```
+
+---
+
 ## Architektur-Entscheidungen
 
 ### TMDB: Direkte API, nicht TMDb Helper
@@ -59,7 +130,8 @@ damit TMDb Helper optional eigene Overlays/Details anzeigen kann. Pflicht ist es
 | `lib/api.py` | Stalker Middleware API Client |
 | `lib/auth.py` | Stalker Authentifizierung / Token-Verwaltung |
 | `resources/settings.xml` | Kodi Einstellungen (zwei Sections, gleiche Addon-ID) |
-| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32100–32111 = TMDB + Laden + Refresh) |
+| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32100–32114) – immer parallel in `de_de/strings.po` pflegen! |
+| `resources/language/resource.language.de_de/strings.po` | Deutsche Übersetzung aller Strings – Kodi lädt sie automatisch bei dt. Sprache |
 
 ---
 
@@ -181,10 +253,13 @@ Mit `load_all_pages = true` wird `max_page_limit = 9999` gesetzt → alle Seiten
 
 **Wo gesetzt:** `globals.py::init_globals()` → `self.addon_config.max_page_limit`
 
-### "Daten aktualisieren" Button (`refresh_all_data`)
+### "Daten aktualisieren" Schalter (`refresh_all_data`)
 
-Action-Button in den Einstellungen (Portal-Tab). Ruft `RunPlugin(...?action=refresh_all)` auf.
-Implementiert in `addon.py::__refresh_all_data()`.
+**Kein** `type="action"` – das funktioniert in Kodi 21 nicht (→ Regel 1 oben).
+Stattdessen: `type="boolean"` Toggle. Der Service erkennt `value == 'true'` in
+`onSettingsChanged()`, setzt den Schalter sofort zurück auf `false` und ruft
+`RunPlugin(...?action=refresh_all)` auf.
+Implementiert in `addon.py::__refresh_all_data()` + `lib/service.py::onSettingsChanged()`.
 
 **Ablauf:**
 1. Öffnet `xbmcgui.DialogProgress()` mit Abbrechen-Schaltfläche
@@ -281,7 +356,10 @@ plugin.video.stalkervod.tmdb/
 | `tmdb_api_key` | string (hidden) | Kostenloser Key von themoviedb.org |
 | `tmdb_language` | string | Sprache für Metadaten, default `de-DE` |
 | `load_all_pages` | boolean | Alle Server-Seiten auf einmal laden (max_page_limit=9999), Standard: false (=2 Seiten) |
-| `refresh_all_data` | action | Button: Alle Kategorien abrufen + TMDB-Cache befüllen, mit Fortschrittsanzeige |
+| `refresh_all_data` | **boolean** (kein action!) | Schalter-Workaround: einschalten → Service startet Refresh + setzt Schalter zurück |
+
+> **Wichtig:** `refresh_all_data` ist bewusst `type="boolean"`, obwohl es sich wie ein Button verhält.
+> Hintergrund: `type="action"` mit `<action>`-Child funktioniert in Kodi 21 nicht (→ Regel 1 oben).
 
 Die `settings.xml` hat **zwei `<section>`-Blöcke** mit der gleichen `id="plugin.video.stalkervod.tmdb"` –
 das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
@@ -304,11 +382,7 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 | Ersteinrichtungs-Dialog | `claude/tmdb-key-pagination-f4wb3` | `onSettingsChanged` im Service erkennt erste Anmeldedaten-Eingabe → Ja/Nein-Dialog → startet `refresh_all` |
 | Deutsches UI | `claude/tmdb-key-pagination-f4wb3` | `resource.language.de_de/strings.po` – alle Settings auf Deutsch bei deutschem Kodi |
 
-### Bekanntes Kodi-21-Problem: `type="action"` in `settings version="1"`
-In Kodi 21 (Omega) mit `<settings version="1">` ist das `<action>RunPlugin()</action>` Child-Element
-von `type="action"` Settings **nicht valide**. Kodi ignoriert still das gesamte `<group>`-Element.
-**Workaround:** `type="boolean"` mit Toggle-Control. Service setzt den Wert zurück auf `false`
-und ruft `RunPlugin(...)` auf wenn er `true` detektiert. Funktioniert zuverlässig.
+> **Kodi-21-Einschränkungen:** Siehe Abschnitt "⚠️ KODI 21 – BEKANNTE EINSCHRÄNKUNGEN" ganz oben.
 
 ### Offene Verbesserungs-Ideen (noch nicht umgesetzt)
 
