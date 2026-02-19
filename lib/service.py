@@ -45,6 +45,9 @@ class BackgroundService(Monitor):
         mac = addon.getSetting('mac_address')
         if not server or not mac:
             return  # Not configured yet – nothing to refresh
+        # Respect cache_enabled setting (default true when not explicitly 'false')
+        if addon.getSetting('cache_enabled') == 'false':
+            return
 
         profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
         from .stalker_cache import StalkerCache
@@ -62,11 +65,18 @@ class BackgroundService(Monitor):
         """
         addon = xbmcaddon.Addon()
 
-        # --- Manual refresh button (boolean toggle workaround) ---
+        # --- Manual refresh: delete all + reload ---
         if addon.getSetting('refresh_all_data') == 'true':
             addon.setSetting('refresh_all_data', 'false')
             xbmc.executebuiltin(
                 'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)')
+            return
+
+        # --- Delta update: only add new content ---
+        if addon.getSetting('update_new_data') == 'true':
+            addon.setSetting('update_new_data', 'false')
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data)')
             return
 
         # --- Folder filter selection buttons (boolean toggle workaround) ---

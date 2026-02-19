@@ -20,20 +20,6 @@
                 </setting>
             </group>
 
-            <group id="pagination" label="32112">
-                <setting id="load_all_pages" type="boolean" label="32108" help="32109">
-                    <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-
-                <setting id="refresh_all_data" type="boolean" label="32110" help="32111">
-                    <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-            </group>
-
             <group id="device_info" label="32006">
                 <setting id="mac_address" type="string" label="32007" help="">
                     <level>0</level>
@@ -119,6 +105,38 @@
                 </setting>
 
                 <setting id="folder_filter_select_tv" type="boolean" label="32129" help="32130">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
+        </category>
+    </section>
+
+    <section id="plugin.video.stalkervod.tmdb">
+        <category id="cache" label="32131">
+            <group id="cache_settings" label="32132">
+                <setting id="cache_enabled" type="boolean" label="32133" help="32134">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+
+                <setting id="load_all_pages" type="boolean" label="32108" help="32109">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
+
+            <group id="data_management" label="32112">
+                <setting id="refresh_all_data" type="boolean" label="32110" help="32111">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+
+                <setting id="update_new_data" type="boolean" label="32135" help="32136">
                     <level>0</level>
                     <default>false</default>
                     <control type="toggle" />
