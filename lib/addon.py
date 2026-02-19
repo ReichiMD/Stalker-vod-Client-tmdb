@@ -6,6 +6,7 @@ import re
 import math
 import json
 import os
+import time
 from urllib.parse import parse_qsl
 import xbmc
 import xbmcgui
@@ -47,7 +48,7 @@ def _get_tmdb_client():
     if not cfg.enabled or not cfg.api_key:
         return None
     if _tmdb_client_singleton is None:
-        _tmdb_client_singleton = TmdbClient(cfg.api_key, cfg.language)
+        _tmdb_client_singleton = TmdbClient(cfg.api_key, cfg.language, cfg.cache_days)
     return _tmdb_client_singleton
 
 
@@ -1030,6 +1031,78 @@ class StalkerAddon:
             'Stalker VOD',
             '{} von {} Ordnern werden angezeigt.'.format(count_visible, count_total))
 
+    @staticmethod
+    def __show_tmdb_cache_info():
+        """Show TMDB cache statistics: entry count, age, expiry, file size."""
+        import json
+        cache_path = os.path.join(G.addon_config.token_path, 'tmdb_cache.json')
+        cache_days = G.tmdb_config.cache_days
+
+        if not xbmcvfs.exists(cache_path):
+            xbmcgui.Dialog().ok(
+                'TMDB-Cache Info',
+                'Kein Cache vorhanden.[CR]'
+                'Erst "Alle Daten aktualisieren" ausführen.'
+            )
+            return
+
+        try:
+            with xbmcvfs.File(cache_path, 'r') as fh:
+                content = fh.read()
+            cache = json.loads(content) if content else {}
+        except Exception:
+            xbmcgui.Dialog().ok('TMDB-Cache Info', 'Cache-Datei konnte nicht gelesen werden.')
+            return
+
+        now = time.time()
+        genre_keys = {'__genres_movie__', '__genres_tv__'}
+        film_entries = {k: v for k, v in cache.items() if k not in genre_keys and isinstance(v, dict)}
+
+        if not film_entries:
+            xbmcgui.Dialog().ok('TMDB-Cache Info', 'Cache ist leer.\nNoch keine TMDB-Daten heruntergeladen.')
+            return
+
+        timestamps = [v.get('ts', now) for v in film_entries.values()]
+        oldest_ts = min(timestamps)
+        newest_ts = max(timestamps)
+        oldest_days = int((now - oldest_ts) / 86400.0)
+        newest_days = int((now - newest_ts) / 86400.0)
+        expires_in_days = cache_days - oldest_days
+
+        if expires_in_days > 0:
+            expiry_str = 'noch {} Tage'.format(expires_in_days)
+        else:
+            expiry_str = 'abgelaufen (wird beim nächsten Zugriff erneuert)'
+
+        try:
+            stat = xbmcvfs.Stat(cache_path)
+            size_bytes = stat.st_size()
+            if size_bytes < 1024 * 1024:
+                size_str = '{:.0f} KB'.format(size_bytes / 1024.0)
+            else:
+                size_str = '{:.2f} MB'.format(size_bytes / (1024.0 * 1024.0))
+        except Exception:
+            size_str = 'unbekannt'
+
+        newest_str = 'heute' if newest_days == 0 else 'vor {} Tag(en)'.format(newest_days)
+        oldest_str = 'heute' if oldest_days == 0 else 'vor {} Tag(en)'.format(oldest_days)
+
+        xbmcgui.Dialog().ok(
+            'TMDB-Cache Info',
+            'Gespeicherte Einträge: {} Filme[CR]'
+            'Neuester Eintrag: {}[CR]'
+            'Ältester Eintrag: {}[CR]'
+            'Läuft ab in: {} (Einstellung: {} Tage)[CR]'
+            'Cache-Größe: {}'.format(
+                len(film_entries),
+                newest_str,
+                oldest_str,
+                expiry_str,
+                cache_days,
+                size_str,
+            )
+        )
+
     def router(self, param_string):
         """Route calls"""
         params = dict(parse_qsl(param_string))
@@ -1076,6 +1149,8 @@ class StalkerAddon:
                 self.__update_new_data()
             elif params['action'] == 'manage_folders':
                 self.__manage_folder_selection(params)
+            elif params['action'] == 'tmdb_cache_info':
+                self.__show_tmdb_cache_info()
             else:
                 raise ValueError('Invalid param string: {}!'.format(param_string))
         else:

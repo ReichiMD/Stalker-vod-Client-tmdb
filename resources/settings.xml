@@ -173,6 +173,23 @@
                     <control type="edit" format="string" />
                 </setting>
             </group>
+
+            <group id="tmdb_cache_group" label="32137">
+                <setting id="tmdb_cache_days" type="string" label="32138" help="32139">
+                    <level>0</level>
+                    <default>30</default>
+                    <constraints>
+                        <allowempty>false</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+
+                <setting id="tmdb_show_cache_info" type="boolean" label="32140" help="32141">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
         </category>
     </section>
 </settings>

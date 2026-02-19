@@ -44,9 +44,10 @@ class TmdbClient:
     # Stop and raise TmdbRateLimitError after this many back-to-back 429s
     _MAX_CONSECUTIVE_429 = 3
 
-    def __init__(self, api_key, language='de-DE'):
+    def __init__(self, api_key, language='de-DE', cache_days=30):
         self.__api_key = api_key
         self.__language = language
+        self.__cache_days = max(1, int(cache_days))
         self.__cache_path = None
         self.__cache = {}
         self.__cache_loaded = False
@@ -285,7 +286,7 @@ class TmdbClient:
         if entry is None:
             return None
         age_days = (time.time() - entry.get('ts', 0)) / 86400.0
-        if age_days >= CACHE_EXPIRY_DAYS:
+        if age_days >= self.__cache_days:
             return None
         return entry.get('data')  # may itself be None (negative cache)
 

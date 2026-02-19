@@ -211,3 +211,23 @@ msgstr "Nur neue Inhalte hinzufügen (einschalten zum Starten)"
 msgctxt "#32136"
 msgid "Checks for new films and adds them to the cache. Existing data is kept. Only new films get TMDB metadata fetched. Toggle resets itself automatically."
 msgstr "Prüft ob neue Filme vorhanden sind und fügt sie zum Cache hinzu. Vorhandene Daten bleiben erhalten. Nur für neue Filme werden TMDB-Daten geladen. Schalter setzt sich danach automatisch zurück."
+
+msgctxt "#32137"
+msgid "TMDB Cache"
+msgstr "TMDB-Cache"
+
+msgctxt "#32138"
+msgid "Cache validity (days)"
+msgstr "Cache-Gültigkeitsdauer (Tage)"
+
+msgctxt "#32139"
+msgid "How many days should TMDB metadata be kept before being re-downloaded. Default: 30. Higher values = fewer downloads but older data."
+msgstr "Wie viele Tage sollen TMDB-Metadaten gespeichert bleiben, bevor sie neu heruntergeladen werden. Standard: 30. Höhere Werte = weniger Downloads, aber ältere Daten."
+
+msgctxt "#32140"
+msgid "Show cache info (toggle to open)"
+msgstr "Cache-Info anzeigen (einschalten zum Öffnen)"
+
+msgctxt "#32141"
+msgid "Shows number of stored entries, age of oldest and newest entry, days remaining until expiry, and cache file size."
+msgstr "Zeigt Anzahl der gespeicherten Einträge, Alter des ältesten und neuesten Eintrags, verbleibende Gültigkeitsdauer und Cache-Dateigröße an."

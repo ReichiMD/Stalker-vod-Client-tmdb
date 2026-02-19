@@ -44,6 +44,7 @@ class TmdbConfig:
     enabled: bool = False
     api_key: str = None
     language: str = 'de-DE'
+    cache_days: int = 30
 
 
 @dataclasses.dataclass
@@ -102,6 +103,11 @@ class GlobalVariables:
             self.tmdb_config.enabled = self.__addon.getSetting('tmdb_enabled') == 'true'
             self.tmdb_config.api_key = self.__addon.getSetting('tmdb_api_key')
             self.tmdb_config.language = self.__addon.getSetting('tmdb_language') or 'de-DE'
+            try:
+                cache_days = int(self.__addon.getSetting('tmdb_cache_days') or '30')
+                self.tmdb_config.cache_days = max(1, cache_days)
+            except (ValueError, TypeError):
+                self.tmdb_config.cache_days = 30
 
             # Init Folder Filter settings
             self.filter_config.use_keywords = self.__addon.getSetting('folder_filter_use_keywords') == 'true'
