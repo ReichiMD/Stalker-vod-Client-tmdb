@@ -452,9 +452,9 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/fix-vod-search-filtering-Fk1Ti`
+- Branch: `claude/fix-vod-folder-issue-bUQtt`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.0.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.1.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -462,6 +462,7 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Stichwort-Filter Wortgrenze-Fix | `claude/fix-vod-folder-issue-bUQtt` | `"de"` matchte als Teilstring auch `"nl-videoland"` → jetzt `\b`-Wortgrenzen per Regex |
 | Such-Filter fix | `claude/fix-vod-search-filtering-Fk1Ti` | Suche direkt ohne Gruppenauswahl-Dialog – immer alle sichtbaren Gruppen |
 | Gruppen-Filter in Suche | `claude/fix-vod-search-filtering-Fk1Ti` | Such-Dialog zeigte vorher ausgeblendete Gruppen an – jetzt gefiltert |
 | `load_all_pages` Setting | `claude/tmdb-key-pagination-f4wb3` | Alle Server-Seiten auf einmal laden (TiviMate-Stil) |
