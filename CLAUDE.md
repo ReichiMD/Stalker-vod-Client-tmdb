@@ -454,7 +454,7 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 - Branch: `claude/optimize-data-refresh-S8crk`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.2.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.3.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -462,6 +462,7 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| load_all_pages Cache-Fix | `claude/optimize-data-refresh-S8crk` | `load_all_pages=true` überspringt jetzt den Cache und holt immer frisch vom Server (alle Seiten). `load_all_pages=false` (Standard) nutzt den Cache. |
 | Lokaler Stalker-Cache | `claude/optimize-data-refresh-S8crk` | `lib/stalker_cache.py` – Kategorien + Videolisten werden 24h lokal gecacht (je eine JSON-Datei pro Kategorie). Öffnen eines Ordners beim 2. Mal ist sofort (<1s). |
 | Täglicher Hintergrund-Refresh | `claude/optimize-data-refresh-S8crk` | Service prüft beim Kodi-Start ob Cache älter als 24h ist → startet `refresh_all&silent=1` lautlos im Hintergrund. |
 | Refresh speichert Stalker-Daten | `claude/optimize-data-refresh-S8crk` | `refresh_all` ist jetzt auch ohne TMDB sinnvoll: speichert alle Videolisten in den lokalen Cache. |

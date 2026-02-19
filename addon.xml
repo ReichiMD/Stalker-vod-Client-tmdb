@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.2" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.3" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,12 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.1.3  (2026-02-19)
+- Fix: "Alle Seiten laden" (load_all_pages) setting works again.
+  When enabled the cache is bypassed and all pages are fetched fresh
+  directly from the server – so the setting has a clear effect again.
+  When disabled (default) the local cache is used for fast browsing.
+
 v0.1.2  (2026-02-19)
 - New: Local Stalker data cache (24 h). Category lists and all video
   lists per folder are now saved to disk after the first load.

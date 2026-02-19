@@ -325,9 +325,11 @@ class StalkerAddon:
         plugin_category = 'VOD - ' + params['category'] if params.get('fav', '0') != '1' else 'VOD - ' + params['category'] + ' - FAVORITES'
         xbmcplugin.setPluginCategory(G.get_handle(), plugin_category)
         xbmcplugin.setContent(G.get_handle(), 'videos')
-        # Use local cache for normal browsing (skip for search and favorites)
+        # Use local cache for normal browsing only when load_all_pages is off.
+        # load_all_pages=true means: always fetch fresh from server, all pages.
         videos = None
-        if not search_term.strip() and str(params.get('fav', '0')) == '0':
+        load_all = G.addon_config.max_page_limit >= 9999
+        if not load_all and not search_term.strip() and str(params.get('fav', '0')) == '0':
             cached = StalkerCache(G.addon_config.token_path).get_videos('vod', params['category_id'])
             if cached is not None:
                 videos = {'data': cached, 'total_items': len(cached), 'max_page_items': len(cached)}
@@ -369,9 +371,11 @@ class StalkerAddon:
         plugin_category = 'SERIES - ' + params['category'] if params.get('fav', '0') != '1' else 'SERIES - ' + params['category'] + ' - FAVORITES'
         xbmcplugin.setPluginCategory(G.get_handle(), plugin_category)
         xbmcplugin.setContent(G.get_handle(), 'videos')
-        # Use local cache for normal browsing (skip for search and favorites)
+        # Use local cache for normal browsing only when load_all_pages is off.
+        # load_all_pages=true means: always fetch fresh from server, all pages.
         series = None
-        if not search_term.strip() and str(params.get('fav', '0')) == '0':
+        load_all = G.addon_config.max_page_limit >= 9999
+        if not load_all and not search_term.strip() and str(params.get('fav', '0')) == '0':
             cached = StalkerCache(G.addon_config.token_path).get_videos('series', params['category_id'])
             if cached is not None:
                 series = {'data': cached, 'total_items': len(cached), 'max_page_items': len(cached)}
