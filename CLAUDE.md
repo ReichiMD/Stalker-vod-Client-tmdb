@@ -28,6 +28,11 @@ make package && rm -f dist/*.zip && cp build/plugin.video.stalkervod.tmdb-*.zip 
 **Warum:** Der Nutzer ist Nicht-Programmierer. Die ZIP in `dist/` ist die einzige Möglichkeit,
 das Addon herunterzuladen und in Kodi zu installieren. Ohne aktuelle ZIP ist die Session wertlos.
 
+> **PFLICHT nach Schritt 4:** Nach jeder ZIP-Erstellung auch die `CLAUDE.md` aktualisieren:
+> - Abschnitt "Für den nächsten Merge / nächste Session" → Branch, Version, ZIP aktualisieren
+> - Tabelle "Zuletzt umgesetzte Features" → neue Features eintragen
+> - Bekannte Bugs/Fixes die in dieser Session gelöst wurden → eintragen
+
 ---
 
 ## ⚠️ KODI 21 (OMEGA) – BEKANNTE EINSCHRÄNKUNGEN & PFLICHT-WISSEN
@@ -335,6 +340,28 @@ Implementiert in `addon.py::__refresh_all_data()` + `lib/service.py::onSettingsC
 
 ---
 
+## Such-Verhalten (Search)
+
+### VOD SEARCH / SERIES SEARCH (Top-Level-Klick)
+- Kein Gruppenauswahl-Dialog – sofort Tastatur erscheint mit Heading "Alle Kategorien"
+- Sucht **parallel** in allen sichtbaren (gefilterten) Gruppen per `__search_vod_across_categories()`
+- Ergebnisse aus allen Gruppen werden kombiniert und als ein Listing angezeigt
+- Pagination ist deaktiviert (max_page_items=9999 intern), alle Ergebnisse auf einmal
+- Implementiert in: `lib/addon.py::__search_vod` → `__search_vod_across_categories`
+- Analog für Serien: `__search_series` → `__search_series_across_categories`
+- Analog für TV: `__search_tv` → `__search_tv_across_genres`
+
+### Kontextmenü-Suche (Rechtsklick auf Gruppe → "Search")
+- `params['category']` und `params['category_id']` sind bereits gesetzt
+- Sucht **nur** in der gewählten Gruppe (serverseitig über `Api.get_videos(category_id, ...)`)
+- Verhält sich wie ein normales Listing mit Suchbegriff
+
+### Warum ist die Gruppen-Auswahl weg?
+Der Nutzer möchte nie erst eine Gruppe auswählen – die Filterung übernimmt bereits der
+Ordner-Filter in den Einstellungen. Die Suche soll einfach "über alles Sichtbare" gehen.
+
+---
+
 ## Ersteinrichtungs-Dialog (wie Stalker PVR)
 
 ### Ablauf
@@ -425,15 +452,18 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/tmdb-key-pagination-f4wb3`
+- Branch: `claude/fix-vod-search-filtering-Fk1Ti`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.5.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.0.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
+- **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
 ### Zuletzt umgesetzte Features
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Such-Filter fix | `claude/fix-vod-search-filtering-Fk1Ti` | Suche direkt ohne Gruppenauswahl-Dialog – immer alle sichtbaren Gruppen |
+| Gruppen-Filter in Suche | `claude/fix-vod-search-filtering-Fk1Ti` | Such-Dialog zeigte vorher ausgeblendete Gruppen an – jetzt gefiltert |
 | `load_all_pages` Setting | `claude/tmdb-key-pagination-f4wb3` | Alle Server-Seiten auf einmal laden (TiviMate-Stil) |
 | `refresh_all_data` Schalter | `claude/tmdb-key-pagination-f4wb3` | Schalter statt Button – Kodi 21 `version="1"` settings unterstützt `type="action"` mit `<action>`-Child nicht |
 | Ersteinrichtungs-Dialog | `claude/tmdb-key-pagination-f4wb3` | `onSettingsChanged` im Service erkennt erste Anmeldedaten-Eingabe → Ja/Nein-Dialog → startet `refresh_all` |

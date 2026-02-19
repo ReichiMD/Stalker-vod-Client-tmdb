@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.9" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.0" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,14 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.1.0  (2026-02-19)
+- Improvement: Search no longer asks which group to search in.
+  Clicking "VOD SEARCH" (or "SERIES SEARCH") directly opens the
+  keyboard – the search always runs across all visible (filtered)
+  folders automatically.
+  Context-menu search on a specific folder still searches only
+  that folder, as before.
+
 v0.0.9  (2026-02-19)
 - Fix: Search category dialog now shows only visible (filtered) folders.
   Hidden folders (blocked by keyword or manual filter) no longer appear

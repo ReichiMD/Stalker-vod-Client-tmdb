@@ -12,7 +12,7 @@ import xbmcgui
 import xbmcplugin
 import xbmcvfs
 from .globals import G
-from .utils import ask_for_input, get_int_value, ask_for_category_selection
+from .utils import ask_for_input, get_int_value
 from .api import Api
 from .loggers import Logger
 from .tmdb import TmdbClient
@@ -582,37 +582,28 @@ class StalkerAddon:
         """Search for videos"""
         Logger.debug('Search VOD {}'.format(params))
 
-        # If the category is missing, show the category selection popup
+        # Wenn keine Kategorie angegeben → direkt alle sichtbaren Gruppen durchsuchen
         if not params.get('category'):
-            all_categories = Api.get_vod_categories()
-            # Nur sichtbare (gefilterte) Kategorien anzeigen
-            filtered_categories = _apply_category_filter(all_categories, G.get_filter_file_path('vod'))
-            selected_category = ask_for_category_selection(filtered_categories, 'VOD Kategorie')
-            if not selected_category:
-                # User cancelled category selection - end directory properly
-                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False, updateListing=False, cacheToDisc=False)
-                return
-            params.update({
-                'category': selected_category['title'],
-                'category_id': selected_category['id']
-            })
-
-        search_term = ask_for_input(params['category'])
-        if search_term:
-            if params.get('category_id') == '*':
-                # "Alle Kategorien" gewählt → nur über sichtbare Kategorien suchen
+            search_term = ask_for_input('Alle Kategorien')
+            if search_term:
                 all_categories = Api.get_vod_categories()
                 filtered_categories = _apply_category_filter(all_categories, G.get_filter_file_path('vod'))
                 self.__search_vod_across_categories(filtered_categories, search_term, params)
             else:
-                params.update({'action': 'vod_listing', 'update_listing': False, 'search_term': search_term, 'page': 1})
-                is_context = str(params.get('isContextMenuSearch', 'true')).lower() == 'true'
-                if is_context:
-                    url = G.get_plugin_url(params)
-                    func_str = f'Container.Update({url})'
-                    xbmc.executebuiltin(func_str)
-                else:
-                    self.__list_vod(params)
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False, updateListing=False, cacheToDisc=False)
+            return
+
+        # Kontextmenü-Suche: Kategorie ist bereits gesetzt → nur in dieser Kategorie suchen
+        search_term = ask_for_input(params['category'])
+        if search_term:
+            params.update({'action': 'vod_listing', 'update_listing': False, 'search_term': search_term, 'page': 1})
+            is_context = str(params.get('isContextMenuSearch', 'true')).lower() == 'true'
+            if is_context:
+                url = G.get_plugin_url(params)
+                func_str = f'Container.Update({url})'
+                xbmc.executebuiltin(func_str)
+            else:
+                self.__list_vod(params)
 
     def __search_vod_across_categories(self, filtered_categories, search_term, params):
         """Suche über alle sichtbaren VOD-Kategorien und zeige kombinierte Ergebnisse."""
@@ -630,35 +621,25 @@ class StalkerAddon:
     def __search_series(self, params):
         """Search for videos"""
 
-        # If the category is missing, show the category selection popup
+        # Wenn keine Kategorie angegeben → direkt alle sichtbaren Gruppen durchsuchen
         if not params.get('category'):
-            raw = Api.get_series_categories()
-            all_categories = raw if isinstance(raw, list) else []
-            # Nur sichtbare (gefilterte) Kategorien anzeigen
-            filtered_categories = _apply_category_filter(all_categories, G.get_filter_file_path('series'))
-            selected_category = ask_for_category_selection(filtered_categories, 'Serien Kategorie')
-            if not selected_category:
-                # User cancelled category selection - end directory properly
-                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False, updateListing=False, cacheToDisc=False)
-                return
-            params.update({
-                'category': selected_category['title'],
-                'category_id': selected_category['id']
-            })
-
-        search_term = ask_for_input(params['category'])
-        if search_term:
-            if params.get('category_id') == '*':
-                # "Alle Kategorien" gewählt → nur über sichtbare Kategorien suchen
+            search_term = ask_for_input('Alle Kategorien')
+            if search_term:
                 raw = Api.get_series_categories()
                 all_categories = raw if isinstance(raw, list) else []
                 filtered_categories = _apply_category_filter(all_categories, G.get_filter_file_path('series'))
                 self.__search_series_across_categories(filtered_categories, search_term, params)
             else:
-                params.update({'action': 'series_listing', 'update_listing': False, 'search_term': search_term, 'page': 1})
-                url = G.get_plugin_url(params)
-                func_str = f'Container.Update({url})'
-                xbmc.executebuiltin(func_str)
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False, updateListing=False, cacheToDisc=False)
+            return
+
+        # Kontextmenü-Suche: Kategorie ist bereits gesetzt → nur in dieser Kategorie suchen
+        search_term = ask_for_input(params['category'])
+        if search_term:
+            params.update({'action': 'series_listing', 'update_listing': False, 'search_term': search_term, 'page': 1})
+            url = G.get_plugin_url(params)
+            func_str = f'Container.Update({url})'
+            xbmc.executebuiltin(func_str)
 
     def __search_series_across_categories(self, filtered_categories, search_term, params):
         """Suche über alle sichtbaren Serien-Kategorien und zeige kombinierte Ergebnisse."""
@@ -676,37 +657,28 @@ class StalkerAddon:
     def __search_tv(self, params):
         """Search for videos"""
 
-        # If the category is missing, show the category selection popup
+        # Wenn keine Kategorie angegeben → direkt alle sichtbaren Genres durchsuchen
         if not params.get('category'):
-            all_genres = Api.get_tv_genres()
-            # Nur sichtbare (gefilterte) Genres anzeigen
-            filtered_genres = _apply_category_filter(all_genres, G.get_filter_file_path('tv'))
-            selected_genre = ask_for_category_selection(filtered_genres, 'TV Genre')
-            if not selected_genre:
-                # User cancelled category selection - end directory properly
-                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False, updateListing=False, cacheToDisc=False)
-                return
-            params.update({
-                'category': selected_genre['title'],
-                'category_id': selected_genre['id']
-            })
-
-        search_term = ask_for_input(params['category'])
-        if search_term:
-            if params.get('category_id') == '*':
-                # "Alle Genres" gewählt → über alle sichtbaren TV-Genres suchen
+            search_term = ask_for_input('Alle Genres')
+            if search_term:
                 all_genres = Api.get_tv_genres()
                 filtered_genres = _apply_category_filter(all_genres, G.get_filter_file_path('tv'))
                 self.__search_tv_across_genres(filtered_genres, search_term, params)
             else:
-                params.update({'action': 'tv_listing', 'update_listing': False, 'search_term': search_term, 'page': 1})
-                is_context = str(params.get('isContextMenuSearch', 'true')).lower() == 'true'
-                if is_context:
-                    url = G.get_plugin_url(params)
-                    func_str = f'Container.Update({url})'
-                    xbmc.executebuiltin(func_str)
-                else:
-                    self.__list_channels(params)
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False, updateListing=False, cacheToDisc=False)
+            return
+
+        # Kontextmenü-Suche: Kategorie ist bereits gesetzt → nur in diesem Genre suchen
+        search_term = ask_for_input(params['category'])
+        if search_term:
+            params.update({'action': 'tv_listing', 'update_listing': False, 'search_term': search_term, 'page': 1})
+            is_context = str(params.get('isContextMenuSearch', 'true')).lower() == 'true'
+            if is_context:
+                url = G.get_plugin_url(params)
+                func_str = f'Container.Update({url})'
+                xbmc.executebuiltin(func_str)
+            else:
+                self.__list_channels(params)
 
     def __search_tv_across_genres(self, filtered_genres, search_term, params):
         """Suche über alle sichtbaren TV-Genres und zeige kombinierte Ergebnisse."""
