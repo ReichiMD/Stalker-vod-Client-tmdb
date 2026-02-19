@@ -3,8 +3,12 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
+import os
 from urllib.parse import urlsplit, parse_qsl, urlencode
 import xbmc
+import xbmcaddon
+import xbmcgui
+import xbmcvfs
 from xbmc import Monitor, Player, getInfoLabel
 from .loggers import Logger
 from .utils import get_int_value, get_next_info_and_send_signal
@@ -27,6 +31,29 @@ class BackgroundService(Monitor):
                 break
 
         Logger.debug('Service stopped')
+
+    def onSettingsChanged(self):  # pylint: disable=invalid-name
+        """Detect first-time credential setup and offer to pre-fetch all VOD data."""
+        addon = xbmcaddon.Addon()
+        server = addon.getSetting('server_address')
+        mac = addon.getSetting('mac_address')
+        if not server or not mac:
+            return
+
+        profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+        flag_file = os.path.join(profile, 'initial_setup_done')
+        if xbmcvfs.exists(flag_file):
+            return
+
+        # Mark as done before asking so repeated setting changes don't re-trigger
+        handle = xbmcvfs.File(flag_file, 'w')
+        handle.close()
+
+        if xbmcgui.Dialog().yesno(
+                addon.getLocalizedString(32113),
+                addon.getLocalizedString(32114)):
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)')
 
 
 class PlayerMonitor(Player):

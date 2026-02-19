@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.3" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.4" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,15 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.0.4  (2026-02-19)
+- Initial setup wizard: after entering server address and MAC address the
+  addon automatically asks to pre-fetch all VOD data (Yes/No dialog).
+  Runs only once; can be re-triggered via the "Refresh all data" button.
+- German UI: full German translation added (resource.language.de_de).
+  Kodi automatically uses it when the interface language is set to German.
+- Settings: fixed duplicate group/setting label for "Load all pages".
+  The data management group now has its own label ("Datenverwaltung").
+
 v0.0.3  (2026-02-19)
 - New setting "Load all pages at once": fetches all server pages in one
   listing call instead of paginating (TiviMate-style). Recommended when

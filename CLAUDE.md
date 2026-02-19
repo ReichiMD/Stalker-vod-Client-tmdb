@@ -203,6 +203,33 @@ Implementiert in `addon.py::__refresh_all_data()`.
 
 ---
 
+## Ersteinrichtungs-Dialog (wie Stalker PVR)
+
+### Ablauf
+1. Nutzer öffnet Einstellungen und gibt Serveradresse + MAC-Adresse ein
+2. Kodi ruft `BackgroundService.onSettingsChanged()` auf (bei jeder Einstellungsänderung)
+3. Wenn **beide Felder** gesetzt sind und die Flag-Datei `initial_setup_done` **nicht** existiert:
+   - Flag-Datei wird sofort erstellt (verhindert mehrfaches Anzeigen)
+   - Ja/Nein-Dialog: "Sollen alle VOD-Daten jetzt geladen werden?"
+   - Bei "Ja": `RunPlugin(...?action=refresh_all)` → startet Bulk-Download mit Fortschrittsbalken
+4. Bei "Nein" oder Abbruch: Button "Alle Daten aktualisieren" in den Einstellungen steht weiterhin bereit
+
+### Flag-Datei
+- Pfad: `{kodi_profile}/plugin.video.stalkervod.tmdb/initial_setup_done` (leere Datei)
+- Existiert diese Datei → Dialog erscheint nie wieder automatisch
+- Manuelle Alternative: Button "Alle Daten aktualisieren" in den Portal-Einstellungen
+
+### Warum onSettingsChanged und nicht onStart?
+`onSettingsChanged` im Service wird von Kodi aufgerufen sobald der Nutzer eine Einstellung
+ändert und bestätigt. Das ist der nächstmögliche Zeitpunkt nach der Eingabe der Anmeldedaten –
+exakt das Verhalten, das Stalker PVR beim ersten Start zeigt.
+
+**Hinweis für zukünftige Sessions:** Wenn der Nutzer den Server wechselt und eine neue
+Ersteinrichtung triggern möchte, muss die Flag-Datei gelöscht werden.
+Dafür könnte ein Reset-Button in den Einstellungen ergänzt werden (noch nicht umgesetzt).
+
+---
+
 ## Bekannte Bugs & Fixes (heute gelöst)
 
 ### 1. `setRating()` TypeError
@@ -265,7 +292,7 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 - Branch: `claude/tmdb-key-pagination-f4wb3`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.3.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.4.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 
 ### Zuletzt umgesetzte Features
@@ -274,6 +301,8 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 |---|---|---|
 | `load_all_pages` Setting | `claude/tmdb-key-pagination-f4wb3` | Alle Server-Seiten auf einmal laden (TiviMate-Stil) |
 | `refresh_all_data` Button | `claude/tmdb-key-pagination-f4wb3` | TMDB-Cache vorwärmen mit Fortschrittsbalken |
+| Ersteinrichtungs-Dialog | `claude/tmdb-key-pagination-f4wb3` | `onSettingsChanged` im Service erkennt erste Anmeldedaten-Eingabe → Ja/Nein-Dialog → startet `refresh_all` |
+| Deutsches UI | `claude/tmdb-key-pagination-f4wb3` | `resource.language.de_de/strings.po` – alle Settings auf Deutsch bei deutschem Kodi |
 
 ### Offene Verbesserungs-Ideen (noch nicht umgesetzt)
 
