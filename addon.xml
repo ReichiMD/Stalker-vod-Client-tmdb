@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.5" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.6" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,24 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.1.6  (2026-02-19)
+- New: TMDB rate limiting (max 35 requests / 10 seconds) to stay safely
+  below TMDB's published limit of 40 req/10s. Kodi no longer floods TMDB
+  during bulk operations. A short automatic pause is inserted when needed.
+- New: Hard abort after 3 consecutive HTTP 429 "Too Many Requests" errors.
+  When TMDB repeatedly blocks requests, the download stops immediately and
+  a clear dialog is shown: "TMDB hat zu viele Anfragen blockiert – bitte
+  warte einige Minuten und versuche es erneut." Already downloaded data
+  is saved before stopping.
+- New: Genre names are now fetched from TMDB and shown in the Kodi info
+  popup (e.g. "Action", "Komödie"). The genre list is downloaded once and
+  cached for 30 days – no extra API call per film.
+- Improvement: TMDB request timeout reduced from 10 s to 5 s. If TMDB is
+  slow or unreachable, Kodi now recovers within 5 s instead of 10 s.
+- Improvement: After a rate-limit abort during normal browsing, a small
+  warning toast is shown once ("TMDB-Limit erreicht – Metadaten pausiert").
+  Existing cached data is still shown; only uncached films lose TMDB data.
+
 v0.1.5  (2026-02-19)
 - New: Dedicated "Cache" settings section with 4 options:
   • "Use local cache" toggle (on by default) – disable to always fetch
