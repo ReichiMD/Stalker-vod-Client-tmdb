@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.5" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.8" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,28 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.0.8  (2026-02-19)
+- Fix: folder filter mode selector replaced. type="integer" with spinner
+  and labeled options is not valid in Kodi 21 settings version="1" (missing
+  "format" attribute causes setting to be silently dropped, filter stays off).
+  Replaced with two type="boolean" toggles: "Stichwörter-Filter aktiv"
+  and "Manuelle Auswahl aktiv". Manual selection takes priority when
+  both are enabled. Same approach as the type="action" fix in v0.0.5.
+
+v0.0.7  (2026-02-19)
+- Fix: "Alle Daten aktualisieren" respects the folder filter now.
+  Only folders that pass the active filter (keywords or manual selection)
+  are refreshed – skipping hidden folders saves significant time.
+
+v0.0.6  (2026-02-19)
+- New: "Ordner-Filter" settings section to hide unwanted folders.
+  Three modes: Off (show all), Keywords (show folders whose name contains
+  any of the listed words, e.g. "de, deutsch, german, multi"), and
+  Manual selection (open a checklist and tick exactly which folders appear).
+  Works for VOD, Series and TV genres independently.
+- Filter runs immediately after the fast category API call – no extra
+  loading time, TMDB is never involved at this stage.
+
 v0.0.5  (2026-02-19)
 - Fix: "Data management" group was invisible in Kodi settings. Root cause:
   type="action" with <action>RunPlugin()</action> is not valid in Kodi 21

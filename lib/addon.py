@@ -4,10 +4,13 @@ Compatible with Kodi 19.x "Matrix" and above
 from __future__ import absolute_import, division, unicode_literals
 import re
 import math
+import json
+import os
 from urllib.parse import parse_qsl
 import xbmc
 import xbmcgui
 import xbmcplugin
+import xbmcvfs
 from .globals import G
 from .utils import ask_for_input, get_int_value, ask_for_category_selection
 from .api import Api
@@ -79,6 +82,61 @@ def _apply_tmdb_to_item(list_item, video_info, info, stalker_poster):
     list_item.setArt(art)
 
 
+def _load_filter_ids(filter_file):
+    """Load saved category IDs from a filter JSON file. Returns (found, set_of_ids)."""
+    try:
+        f = xbmcvfs.File(filter_file, 'r')
+        content = f.read()
+        f.close()
+        if content:
+            return True, set(json.loads(content))
+    except Exception:
+        pass
+    return False, set()
+
+
+def _save_filter_ids(filter_file, id_list):
+    """Persist a list of category ID strings to a filter JSON file."""
+    try:
+        f = xbmcvfs.File(filter_file, 'w')
+        f.write(json.dumps(id_list))
+        f.close()
+    except Exception as exc:
+        Logger.debug('Folder filter: error saving {}: {}'.format(filter_file, exc))
+
+
+def _apply_category_filter(categories, filter_file):
+    """Return a filtered copy of categories based on current filter settings.
+
+    Manuelle Auswahl hat Vorrang vor Stichwörtern.
+    Sind beide Schalter aus → alle Kategorien anzeigen.
+    """
+    cfg = G.filter_config
+    if not categories:
+        return categories
+
+    # Manuelle Auswahl hat Vorrang
+    if cfg.use_manual:
+        file_exists, stored_ids = _load_filter_ids(filter_file)
+        if not file_exists:
+            return categories  # noch nicht konfiguriert → alles anzeigen
+        return [c for c in categories if str(c['id']) in stored_ids]
+
+    # Stichwörter-Filter
+    if cfg.use_keywords:
+        if not cfg.keywords:
+            return categories
+        result = []
+        for cat in categories:
+            title_lower = cat['title'].lower()
+            if any(kw in title_lower for kw in cfg.keywords):
+                result.append(cat)
+        return result
+
+    # Beide Schalter aus → alles anzeigen
+    return categories
+
+
 class StalkerAddon:
     """Stalker Addon"""
     @staticmethod
@@ -134,7 +192,7 @@ class StalkerAddon:
         url = G.get_plugin_url({'action': 'tv_search', 'fav': 0, 'isContextMenuSearch': False})
         xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
-        genres = Api.get_tv_genres()
+        genres = _apply_category_filter(Api.get_tv_genres(), G.get_filter_file_path('tv'))
         for genre in genres:
             list_item = xbmcgui.ListItem(label=genre['title'].upper())
             fav_url = G.get_plugin_url({'action': 'tv_listing', 'category': genre['title'], 'category_id': genre['id'], 'page': 1,
@@ -164,7 +222,7 @@ class StalkerAddon:
         url = G.get_plugin_url({'action': 'vod_search', 'fav': 0, 'isContextMenuSearch': False})
         xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
-        categories = Api.get_vod_categories()
+        categories = _apply_category_filter(Api.get_vod_categories(), G.get_filter_file_path('vod'))
         for category in categories:
             list_item = xbmcgui.ListItem(label=category['title'])
             fav_url = G.get_plugin_url({'action': 'vod_listing', 'category': category['title'], 'category_id': category['id'], 'page': 1,
@@ -193,7 +251,7 @@ class StalkerAddon:
         url = G.get_plugin_url({'action': 'series_search', 'fav': 0, 'isContextMenuSearch': False})
         xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
-        categories = Api.get_series_categories()
+        categories = _apply_category_filter(Api.get_series_categories(), G.get_filter_file_path('series'))
         for category in categories:
             list_item = xbmcgui.ListItem(label=category['title'])
             fav_url = G.get_plugin_url({'action': 'series_listing', 'category': category['title'], 'category_id': category['id'], 'page': 1,
@@ -639,6 +697,10 @@ class StalkerAddon:
             except Exception:
                 pass
 
+            # Apply folder filter so only visible folders are refreshed
+            vod_cats = _apply_category_filter(vod_cats, G.get_filter_file_path('vod'))
+            series_cats = _apply_category_filter(series_cats, G.get_filter_file_path('series'))
+
             work = [('vod', c) for c in vod_cats] + [('series', c) for c in series_cats]
             total = len(work)
             if total == 0:
@@ -678,6 +740,54 @@ class StalkerAddon:
                 xbmc.sleep(1500)
         finally:
             progress.close()
+
+    @staticmethod
+    def __manage_folder_selection(params):
+        """Open a multiselect dialog so the user can pick which folders are visible.
+
+        Triggered via action=manage_folders&type=vod|series|tv.
+        Saves the selected IDs as JSON to the profile directory.
+        """
+        cat_type = params.get('type', 'vod')
+        filter_file = G.get_filter_file_path(cat_type)
+
+        if cat_type == 'vod':
+            categories = Api.get_vod_categories() or []
+            heading = 'VOD-Ordner auswählen'
+        elif cat_type == 'series':
+            raw = Api.get_series_categories()
+            categories = raw if isinstance(raw, list) else []
+            heading = 'Serien-Ordner auswählen'
+        else:
+            categories = Api.get_tv_genres() or []
+            heading = 'TV-Genres auswählen'
+
+        if not categories:
+            xbmcgui.Dialog().ok('Stalker VOD', 'Keine Ordner gefunden. Bitte prüfe die Serververbindung.')
+            return
+
+        names = [c['title'] for c in categories]
+
+        # Load previously saved selection; if no file yet → start with nothing selected
+        file_exists, stored_ids = _load_filter_ids(filter_file)
+        if file_exists and stored_ids:
+            preselected = [i for i, c in enumerate(categories) if str(c['id']) in stored_ids]
+        else:
+            preselected = []  # First time: nothing checked → user selects what they want
+
+        selected_indices = xbmcgui.Dialog().multiselect(heading, names, preselect=preselected)
+
+        if selected_indices is None:
+            return  # User cancelled → keep existing setting unchanged
+
+        selected_ids = [str(categories[i]['id']) for i in selected_indices]
+        _save_filter_ids(filter_file, selected_ids)
+
+        count_visible = len(selected_ids)
+        count_total = len(categories)
+        xbmcgui.Dialog().ok(
+            'Stalker VOD',
+            '{} von {} Ordnern werden angezeigt.'.format(count_visible, count_total))
 
     def router(self, param_string):
         """Route calls"""
@@ -721,6 +831,8 @@ class StalkerAddon:
                 self.__toggle_favorites(params['video_id'], True, params['_type'])
             elif params['action'] == 'refresh_all':
                 self.__refresh_all_data()
+            elif params['action'] == 'manage_folders':
+                self.__manage_folder_selection(params)
             else:
                 raise ValueError('Invalid param string: {}!'.format(param_string))
         else:

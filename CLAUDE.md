@@ -99,6 +99,63 @@ def onSettingsChanged(self):
     ...
 ```
 
+### REGEL 4: Kein `type="integer"` mit Spinner und `<options>` in `settings version="1"`
+
+**Problem:** In Kodi 21 (Omega) schlägt `type="integer"` mit
+`<control type="spinner" subtype="integer" />` und `<options>`-Block fehl,
+weil Kodi ein `format`-Attribut am Control erwartet – das bei Spinner-Controls
+nicht vorgesehen ist. Fehler im Log:
+
+```
+error <ISettingControl>: error reading "format" attribute of <control>
+error <CSetting>: error reading <control> tag of "my_setting"
+warning <CSettingGroup>: unable to read setting "my_setting"
+```
+
+Das Setting wird **lautlos weggeworfen**. In der UI fehlt nur dieses eine Element –
+aber da der gespeicherte Wert nie geladen wird, bleibt die Variable intern auf ihrem
+Standardwert (z.B. 0 = aus). Alle anderen Settings in der Gruppe bleiben sichtbar,
+wirken aber nicht, weil der Modus-Wert fehlt.
+
+```xml
+<!-- ❌ FUNKTIONIERT NICHT in Kodi 21 settings version="1" -->
+<setting id="my_mode" type="integer" label="32001">
+    <constraints>
+        <options>
+            <option label="32002">0</option>
+            <option label="32003">1</option>
+        </options>
+    </constraints>
+    <control type="spinner" subtype="integer" />   <!-- ← fehlendes format= killt das Setting -->
+</setting>
+```
+
+**Workaround – IMMER SO MACHEN:**
+Für Mehrfach-Auswahl (z.B. 3 Modi) statt eines Spinners **mehrere `type="boolean"` Toggles** verwenden:
+
+```xml
+<!-- ✅ KORREKT: zwei boolean toggles statt eines 3-Wege-Spinners -->
+<setting id="filter_use_keywords" type="boolean" label="32001" help="32002">
+    <level>0</level>
+    <default>false</default>
+    <control type="toggle" />
+</setting>
+<setting id="filter_use_manual" type="boolean" label="32003" help="32004">
+    <level>0</level>
+    <default>false</default>
+    <control type="toggle" />
+</setting>
+```
+
+Im Python-Code dann einfach:
+```python
+if cfg.use_manual:
+    # manuelle Auswahl (hat Vorrang)
+elif cfg.use_keywords:
+    # Stichwörter-Filter
+# sonst: alles anzeigen
+```
+
 ---
 
 ## Architektur-Entscheidungen
