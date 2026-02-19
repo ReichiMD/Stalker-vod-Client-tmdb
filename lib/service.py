@@ -46,6 +46,18 @@ class BackgroundService(Monitor):
                 'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)')
             return
 
+        # --- Folder filter selection buttons (boolean toggle workaround) ---
+        for setting_id, cat_type in [
+            ('folder_filter_select_vod', 'vod'),
+            ('folder_filter_select_series', 'series'),
+            ('folder_filter_select_tv', 'tv'),
+        ]:
+            if addon.getSetting(setting_id) == 'true':
+                addon.setSetting(setting_id, 'false')
+                xbmc.executebuiltin(
+                    'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=manage_folders&type={})'.format(cat_type))
+                return
+
         # --- First-time setup wizard ---
         server = addon.getSetting('server_address')
         mac = addon.getSetting('mac_address')

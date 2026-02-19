@@ -123,3 +123,67 @@ msgstr "Ersteinrichtung"
 msgctxt "#32114"
 msgid "Server address and MAC address detected.[CR]Load all VOD data from the server now?[CR][CR]This may take a few minutes depending on content size.[CR]The process can be cancelled at any time."
 msgstr "Server-Adresse und MAC-Adresse erkannt.[CR]Sollen jetzt alle VOD-Daten vom Server geladen werden?[CR][CR]Das kann je nach Inhaltsmenge einige Minuten dauern.[CR]Der Vorgang kann jederzeit abgebrochen werden."
+
+msgctxt "#32115"
+msgid "Folder Filter"
+msgstr "Ordner-Filter"
+
+msgctxt "#32116"
+msgid "Filter Mode"
+msgstr "Filter-Modus"
+
+msgctxt "#32117"
+msgid "Active Mode"
+msgstr "Aktiver Modus"
+
+msgctxt "#32118"
+msgid "Off: show all folders. Keywords: only show folders whose name contains one of the keywords. Manual: you choose exactly which folders are visible."
+msgstr "Aus: alle Ordner anzeigen. Stichwörter: nur Ordner anzeigen, deren Name eines der Stichwörter enthält. Manuelle Auswahl: du wählst genau, welche Ordner sichtbar sind."
+
+msgctxt "#32119"
+msgid "Off – show all folders"
+msgstr "Aus – alle Ordner anzeigen"
+
+msgctxt "#32120"
+msgid "Keywords"
+msgstr "Stichwörter"
+
+msgctxt "#32121"
+msgid "Manual selection"
+msgstr "Manuelle Auswahl"
+
+msgctxt "#32122"
+msgid "Keywords (comma-separated)"
+msgstr "Stichwörter (kommagetrennt)"
+
+msgctxt "#32123"
+msgid "Folders are shown only if their name contains at least one of the listed words. Example: de, deutsch, german, multi"
+msgstr "Ordner werden nur angezeigt, wenn ihr Name mindestens eines der eingetragenen Wörter enthält. Beispiel: de, deutsch, german, multi"
+
+msgctxt "#32124"
+msgid "Select folders manually"
+msgstr "Ordner manuell auswählen"
+
+msgctxt "#32125"
+msgid "VOD folders – open selection (toggle to open)"
+msgstr "VOD-Ordner – Auswahl öffnen (einschalten zum Öffnen)"
+
+msgctxt "#32126"
+msgid "Opens a checklist of all VOD folders. Check the ones you want to see. Toggle resets itself automatically."
+msgstr "Öffnet eine Auswahlliste aller VOD-Ordner. Hake die an, die du sehen möchtest. Der Schalter setzt sich danach automatisch zurück."
+
+msgctxt "#32127"
+msgid "Series folders – open selection (toggle to open)"
+msgstr "Serien-Ordner – Auswahl öffnen (einschalten zum Öffnen)"
+
+msgctxt "#32128"
+msgid "Opens a checklist of all Series folders. Check the ones you want to see. Toggle resets itself automatically."
+msgstr "Öffnet eine Auswahlliste aller Serien-Ordner. Hake die an, die du sehen möchtest. Der Schalter setzt sich danach automatisch zurück."
+
+msgctxt "#32129"
+msgid "TV genres – open selection (toggle to open)"
+msgstr "TV-Genres – Auswahl öffnen (einschalten zum Öffnen)"
+
+msgctxt "#32130"
+msgid "Opens a checklist of all TV genres. Check the ones you want to see. Toggle resets itself automatically."
+msgstr "Öffnet eine Auswahlliste aller TV-Genres. Hake die an, die du sehen möchtest. Der Schalter setzt sich danach automatisch zurück."

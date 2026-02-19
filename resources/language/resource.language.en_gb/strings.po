@@ -123,3 +123,67 @@ msgstr "Initial setup"
 msgctxt "#32114"
 msgid "Server address and MAC address detected.[CR]Load all VOD data from the server now?[CR][CR]This may take a few minutes depending on content size.[CR]The process can be cancelled at any time."
 msgstr "Server address and MAC address detected.[CR]Load all VOD data from the server now?[CR][CR]This may take a few minutes depending on content size.[CR]The process can be cancelled at any time."
+
+msgctxt "#32115"
+msgid "Folder Filter"
+msgstr "Folder Filter"
+
+msgctxt "#32116"
+msgid "Filter Mode"
+msgstr "Filter Mode"
+
+msgctxt "#32117"
+msgid "Active Mode"
+msgstr "Active Mode"
+
+msgctxt "#32118"
+msgid "Off: show all folders. Keywords: only show folders whose name contains one of the keywords. Manual: you choose exactly which folders are visible."
+msgstr "Off: show all folders. Keywords: only show folders whose name contains one of the keywords. Manual: you choose exactly which folders are visible."
+
+msgctxt "#32119"
+msgid "Off – show all folders"
+msgstr "Off – show all folders"
+
+msgctxt "#32120"
+msgid "Keywords"
+msgstr "Keywords"
+
+msgctxt "#32121"
+msgid "Manual selection"
+msgstr "Manual selection"
+
+msgctxt "#32122"
+msgid "Keywords (comma-separated)"
+msgstr "Keywords (comma-separated)"
+
+msgctxt "#32123"
+msgid "Folders are shown only if their name contains at least one of the listed words. Example: de, deutsch, german, multi"
+msgstr "Folders are shown only if their name contains at least one of the listed words. Example: de, deutsch, german, multi"
+
+msgctxt "#32124"
+msgid "Select folders manually"
+msgstr "Select folders manually"
+
+msgctxt "#32125"
+msgid "VOD folders – open selection (toggle to open)"
+msgstr "VOD folders – open selection (toggle to open)"
+
+msgctxt "#32126"
+msgid "Opens a checklist of all VOD folders. Check the ones you want to see. Toggle resets itself automatically."
+msgstr "Opens a checklist of all VOD folders. Check the ones you want to see. Toggle resets itself automatically."
+
+msgctxt "#32127"
+msgid "Series folders – open selection (toggle to open)"
+msgstr "Series folders – open selection (toggle to open)"
+
+msgctxt "#32128"
+msgid "Opens a checklist of all Series folders. Check the ones you want to see. Toggle resets itself automatically."
+msgstr "Opens a checklist of all Series folders. Check the ones you want to see. Toggle resets itself automatically."
+
+msgctxt "#32129"
+msgid "TV genres – open selection (toggle to open)"
+msgstr "TV genres – open selection (toggle to open)"
+
+msgctxt "#32130"
+msgid "Opens a checklist of all TV genres. Check the ones you want to see. Toggle resets itself automatically."
+msgstr "Opens a checklist of all TV genres. Check the ones you want to see. Toggle resets itself automatically."

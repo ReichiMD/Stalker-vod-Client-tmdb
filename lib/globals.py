@@ -45,6 +45,13 @@ class TmdbConfig:
     language: str = 'de-DE'
 
 
+@dataclasses.dataclass
+class FilterConfig:
+    """Folder filter config"""
+    mode: int = 0          # 0=off, 1=keywords, 2=manual
+    keywords: list = dataclasses.field(default_factory=list)
+
+
 class GlobalVariables:
     """Class initializes global settings used by the plugin"""
 
@@ -55,6 +62,7 @@ class GlobalVariables:
         self.addon_config = AddOnConfig()
         self.portal_config = PortalConfig()
         self.tmdb_config = TmdbConfig()
+        self.filter_config = FilterConfig()
 
     def init_globals(self):
         """Init global settings"""
@@ -91,6 +99,14 @@ class GlobalVariables:
             self.tmdb_config.api_key = self.__addon.getSetting('tmdb_api_key')
             self.tmdb_config.language = self.__addon.getSetting('tmdb_language') or 'de-DE'
 
+            # Init Folder Filter settings
+            try:
+                self.filter_config.mode = int(self.__addon.getSetting('folder_filter_mode') or '0')
+            except (ValueError, TypeError):
+                self.filter_config.mode = 0
+            kw_raw = self.__addon.getSetting('folder_filter_keywords') or ''
+            self.filter_config.keywords = [k.strip().lower() for k in kw_raw.split(',') if k.strip()]
+
     def get_handle(self):
         """Get addon handle"""
         return self.addon_config.handle
@@ -98,6 +114,10 @@ class GlobalVariables:
     def get_custom_thumb_path(self, thumb_file_name):
         """Get thumb file path"""
         return os.path.join(self.addon_config.addon_data_path, 'resources', 'media', thumb_file_name)
+
+    def get_filter_file_path(self, cat_type):
+        """Get path for folder filter selection file (cat_type: vod, series, tv)"""
+        return os.path.join(self.addon_config.token_path, 'folder_filter_{}.json'.format(cat_type))
 
     def get_plugin_url(self, params):
         """Get plugin url"""
