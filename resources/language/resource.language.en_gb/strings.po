@@ -247,3 +247,47 @@ msgstr "Delete TMDB cache (toggle to delete)"
 msgctxt "#32145"
 msgid "Deletes all locally stored TMDB metadata. Data will be re-downloaded the next time you open a folder. Toggle resets itself automatically."
 msgstr "Deletes all locally stored TMDB metadata. Data will be re-downloaded the next time you open a folder. Toggle resets itself automatically."
+
+msgctxt "#32146"
+msgid "What to show"
+msgstr "What to show"
+
+msgctxt "#32147"
+msgid "Poster (use TMDB cover)"
+msgstr "Poster (use TMDB cover)"
+
+msgctxt "#32148"
+msgid "Use the TMDB cover image instead of the server cover. Recommended – TMDB covers are usually higher quality."
+msgstr "Use the TMDB cover image instead of the server cover. Recommended – TMDB covers are usually higher quality."
+
+msgctxt "#32149"
+msgid "Background image (Fanart)"
+msgstr "Background image (Fanart)"
+
+msgctxt "#32150"
+msgid "Show a large background image in the detail view. Uses more storage in Kodi's image cache."
+msgstr "Show a large background image in the detail view. Uses more storage in Kodi's image cache."
+
+msgctxt "#32151"
+msgid "Description (Plot)"
+msgstr "Description (Plot)"
+
+msgctxt "#32152"
+msgid "Show the film description in the info dialog."
+msgstr "Show the film description in the info dialog."
+
+msgctxt "#32153"
+msgid "Rating"
+msgstr "Rating"
+
+msgctxt "#32154"
+msgid "Show the TMDB rating (e.g. ★ 7.4) in the info dialog."
+msgstr "Show the TMDB rating (e.g. ★ 7.4) in the info dialog."
+
+msgctxt "#32155"
+msgid "Genre names"
+msgstr "Genre names"
+
+msgctxt "#32156"
+msgid "Show genre names in the info dialog (e.g. Action, Comedy). Downloads a genre list from TMDB once and caches it for 30 days."
+msgstr "Show genre names in the info dialog (e.g. Action, Comedy). Downloads a genre list from TMDB once and caches it for 30 days."

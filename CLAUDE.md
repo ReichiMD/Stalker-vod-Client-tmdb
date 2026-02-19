@@ -557,7 +557,7 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 - Branch: `claude/tmdb-metadata-strategy-Dc4Wn`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.8.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.9.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -565,6 +565,7 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Auswahl: welche Infos anzeigen | `claude/tmdb-metadata-strategy-Dc4Wn` | Neue Gruppe "What to show" im TMDB-Tab mit 5 Toggles: Poster, Fanart, Plot, Rating, Genre. Alle standardmäßig aktiv. `TmdbConfig` hat 5 neue `use_*`-Felder; `_apply_tmdb_to_item()` wertet sie aus. |
 | TMDB-Metadaten jetzt laden | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_refresh_now` im TMDB-Tab. Lädt TMDB-Daten nur für Filme im Stalker-Cache, ohne Stalker-Daten neu herunterzuladen. Überspringt bereits gecachte Filme. Mit Abbrechen-Knopf und Rate-Limit-Schutz. |
 | TMDB-Cache löschen | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_clear_cache` löscht `tmdb_cache.json`. Daten werden beim nächsten Ordner-Öffnen neu heruntergeladen. |
 | Cache-Gültigkeitsdauer (Tage) | `claude/tmdb-metadata-strategy-Dc4Wn` | Neues Setting `tmdb_cache_days` (Standard: 30). Nutzer kann selbst einstellen wie lange Daten gültig bleiben. `TmdbClient.__init__` akzeptiert `cache_days`-Parameter. |

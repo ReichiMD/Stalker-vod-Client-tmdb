@@ -85,24 +85,29 @@ def _apply_tmdb_tv(list_item, video_info, title, year, stalker_poster):
 
 
 def _apply_tmdb_to_item(list_item, video_info, info, stalker_poster):
-    """Write TMDB fields onto a ListItem/InfoTagVideo."""
+    """Write TMDB fields onto a ListItem/InfoTagVideo.
+
+    Each field is only applied if the corresponding setting is enabled.
+    tmdb_id and year are always applied (no bandwidth cost, pure metadata).
+    """
+    cfg = G.tmdb_config
     if info.get('tmdb_id'):
         video_info.setUniqueID('tmdb', info['tmdb_id'], True)
         list_item.setProperty('tmdb_id', info['tmdb_id'])
-    if info.get('plot'):
+    if cfg.use_plot and info.get('plot'):
         video_info.setPlot(info['plot'])
         video_info.setPlotOutline(info['plot'])
-    if info.get('rating'):
+    if cfg.use_rating and info.get('rating'):
         try:
             video_info.setRating('tmdb', float(info['rating']), info.get('votes', 0), True)
         except TypeError:
             pass
     if info.get('year') and info['year'] > 0:
         video_info.setYear(info['year'])
-    if info.get('genres'):
+    if cfg.use_genres and info.get('genres'):
         video_info.setGenres(info['genres'])
-    poster = info.get('poster') or stalker_poster
-    fanart = info.get('fanart')
+    poster = (info.get('poster') if cfg.use_poster else None) or stalker_poster
+    fanart = info.get('fanart') if cfg.use_fanart else None
     art = {'poster': poster}
     if fanart:
         art['fanart'] = fanart

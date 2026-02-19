@@ -45,6 +45,11 @@ class TmdbConfig:
     api_key: str = None
     language: str = 'de-DE'
     cache_days: int = 30
+    use_poster: bool = True
+    use_fanart: bool = True
+    use_plot: bool = True
+    use_rating: bool = True
+    use_genres: bool = True
 
 
 @dataclasses.dataclass
@@ -108,6 +113,12 @@ class GlobalVariables:
                 self.tmdb_config.cache_days = max(1, cache_days)
             except (ValueError, TypeError):
                 self.tmdb_config.cache_days = 30
+            # Default true: only false when explicitly set to 'false'
+            self.tmdb_config.use_poster  = self.__addon.getSetting('tmdb_use_poster')  != 'false'
+            self.tmdb_config.use_fanart  = self.__addon.getSetting('tmdb_use_fanart')  != 'false'
+            self.tmdb_config.use_plot    = self.__addon.getSetting('tmdb_use_plot')    != 'false'
+            self.tmdb_config.use_rating  = self.__addon.getSetting('tmdb_use_rating')  != 'false'
+            self.tmdb_config.use_genres  = self.__addon.getSetting('tmdb_use_genres')  != 'false'
 
             # Init Folder Filter settings
             self.filter_config.use_keywords = self.__addon.getSetting('folder_filter_use_keywords') == 'true'

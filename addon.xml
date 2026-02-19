@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.8" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.9" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,18 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.1.9  (2026-02-19)
+- New: "What to show" group in the TMDB tab with five toggles to control
+  which TMDB fields are applied to each film:
+  • Poster (use TMDB cover instead of server cover)
+  • Background image (Fanart)
+  • Description (Plot)
+  • Rating (e.g. ★ 7.4)
+  • Genre names (e.g. Action, Comedy)
+  All five are enabled by default. Turning off Fanart saves storage in
+  Kodi's image cache; turning off individual fields has no effect on
+  TMDB download speed (data is always fetched in one request).
+
 v0.1.8  (2026-02-19)
 - New button "Load TMDB metadata now" in the TMDB tab: fetches TMDB data
   for all films already in the local Stalker cache – without re-downloading
