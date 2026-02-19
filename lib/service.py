@@ -79,6 +79,27 @@ class BackgroundService(Monitor):
                 'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data)')
             return
 
+        # --- TMDB cache info dialog ---
+        if addon.getSetting('tmdb_show_cache_info') == 'true':
+            addon.setSetting('tmdb_show_cache_info', 'false')
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_cache_info)')
+            return
+
+        # --- TMDB metadata refresh (TMDB-only, no Stalker re-download) ---
+        if addon.getSetting('tmdb_refresh_now') == 'true':
+            addon.setSetting('tmdb_refresh_now', 'false')
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_refresh_now)')
+            return
+
+        # --- TMDB cache delete ---
+        if addon.getSetting('tmdb_clear_cache') == 'true':
+            addon.setSetting('tmdb_clear_cache', 'false')
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_clear_cache)')
+            return
+
         # --- Folder filter selection buttons (boolean toggle workaround) ---
         for setting_id, cat_type in [
             ('folder_filter_select_vod', 'vod'),

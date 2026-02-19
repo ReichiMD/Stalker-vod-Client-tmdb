@@ -555,9 +555,9 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/optimize-data-refresh-S8crk`
+- Branch: `claude/tmdb-metadata-strategy-Dc4Wn`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.5.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.9.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -565,6 +565,15 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Auswahl: welche Infos anzeigen | `claude/tmdb-metadata-strategy-Dc4Wn` | Neue Gruppe "What to show" im TMDB-Tab mit 5 Toggles: Poster, Fanart, Plot, Rating, Genre. Alle standardmäßig aktiv. `TmdbConfig` hat 5 neue `use_*`-Felder; `_apply_tmdb_to_item()` wertet sie aus. |
+| TMDB-Metadaten jetzt laden | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_refresh_now` im TMDB-Tab. Lädt TMDB-Daten nur für Filme im Stalker-Cache, ohne Stalker-Daten neu herunterzuladen. Überspringt bereits gecachte Filme. Mit Abbrechen-Knopf und Rate-Limit-Schutz. |
+| TMDB-Cache löschen | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_clear_cache` löscht `tmdb_cache.json`. Daten werden beim nächsten Ordner-Öffnen neu heruntergeladen. |
+| Cache-Gültigkeitsdauer (Tage) | `claude/tmdb-metadata-strategy-Dc4Wn` | Neues Setting `tmdb_cache_days` (Standard: 30). Nutzer kann selbst einstellen wie lange Daten gültig bleiben. `TmdbClient.__init__` akzeptiert `cache_days`-Parameter. |
+| Cache-Info-Dialog | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_show_cache_info` öffnet Dialog mit: Anzahl Einträge, Alter neuester/ältester Eintrag, verbleibende Tage, Dateigröße. Liest direkt aus `tmdb_cache.json`. |
+| TMDB Rate-Limiting | `claude/tmdb-metadata-strategy-Dc4Wn` | Max. 35 Anfragen / 10 Sekunden. Automatische Pause bei Bedarf. `_request_times`-Liste in `TmdbClient`. |
+| Harter 429-Abbruch + Dialog | `claude/tmdb-metadata-strategy-Dc4Wn` | Nach 3 aufeinanderfolgenden HTTP-429: `_aborted=True`, klarer OK-Dialog. Toast beim normalen Browsen (1x pro Prozess). |
+| Genre-Namen von TMDB | `claude/tmdb-metadata-strategy-Dc4Wn` | `/genre/movie/list` + `/genre/tv/list` einmalig laden, 30 Tage gecacht in `tmdb_cache.json`. `setGenres()` im ListItem. |
+| Timeout 10s → 5s | `claude/tmdb-metadata-strategy-Dc4Wn` | Kürzerer Timeout reduziert Wartezeit bei TMDB-Problemen. |
 | Cache-Abschnitt in Einstellungen | `claude/optimize-data-refresh-S8crk` | Neuer `[Cache]`-Abschnitt: `cache_enabled` (an/aus), `load_all_pages` (hierhin verschoben), `refresh_all_data` (alles neu), `update_new_data` (nur neue Inhalte). |
 | Delta-Update (update_new_data) | `claude/optimize-data-refresh-S8crk` | Neuer Button: prüft auf neue Filme, fügt sie zum Cache hinzu, holt TMDB nur für neue Einträge. Vorhandene Daten bleiben erhalten. |
 | load_all_pages + Cache | `claude/optimize-data-refresh-S8crk` | `load_all_pages=false` (Standard) = Variante 1: Paginierung vom Server (~20 pro Seite). `load_all_pages=true` = Variante 2: alle Filme sofort aus Cache (oder alle Seiten vom Server wenn kein Cache). |

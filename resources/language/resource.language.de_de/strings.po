@@ -211,3 +211,83 @@ msgstr "Nur neue Inhalte hinzufügen (einschalten zum Starten)"
 msgctxt "#32136"
 msgid "Checks for new films and adds them to the cache. Existing data is kept. Only new films get TMDB metadata fetched. Toggle resets itself automatically."
 msgstr "Prüft ob neue Filme vorhanden sind und fügt sie zum Cache hinzu. Vorhandene Daten bleiben erhalten. Nur für neue Filme werden TMDB-Daten geladen. Schalter setzt sich danach automatisch zurück."
+
+msgctxt "#32137"
+msgid "TMDB Cache"
+msgstr "TMDB-Cache"
+
+msgctxt "#32138"
+msgid "Cache validity (days)"
+msgstr "Cache-Gültigkeitsdauer (Tage)"
+
+msgctxt "#32139"
+msgid "How many days should TMDB metadata be kept before being re-downloaded. Default: 30. Higher values = fewer downloads but older data."
+msgstr "Wie viele Tage sollen TMDB-Metadaten gespeichert bleiben, bevor sie neu heruntergeladen werden. Standard: 30. Höhere Werte = weniger Downloads, aber ältere Daten."
+
+msgctxt "#32140"
+msgid "Show cache info (toggle to open)"
+msgstr "Cache-Info anzeigen (einschalten zum Öffnen)"
+
+msgctxt "#32141"
+msgid "Shows number of stored entries, age of oldest and newest entry, days remaining until expiry, and cache file size."
+msgstr "Zeigt Anzahl der gespeicherten Einträge, Alter des ältesten und neuesten Eintrags, verbleibende Gültigkeitsdauer und Cache-Dateigröße an."
+
+msgctxt "#32142"
+msgid "Load TMDB metadata now (toggle to start)"
+msgstr "TMDB-Metadaten jetzt laden (einschalten zum Starten)"
+
+msgctxt "#32143"
+msgid "Fetches TMDB metadata for all films already in the local Stalker cache. Does not re-download Stalker data. Films already cached in TMDB are skipped. Toggle resets itself automatically."
+msgstr "Lädt TMDB-Metadaten für alle Filme die bereits im lokalen Stalker-Cache vorhanden sind. Stalker-Daten werden nicht neu heruntergeladen. Bereits gecachte TMDB-Daten werden übersprungen. Schalter setzt sich danach automatisch zurück."
+
+msgctxt "#32144"
+msgid "Delete TMDB cache (toggle to delete)"
+msgstr "TMDB-Cache löschen (einschalten zum Löschen)"
+
+msgctxt "#32145"
+msgid "Deletes all locally stored TMDB metadata. Data will be re-downloaded the next time you open a folder. Toggle resets itself automatically."
+msgstr "Löscht alle lokal gespeicherten TMDB-Metadaten. Die Daten werden beim nächsten Öffnen eines Ordners neu heruntergeladen. Schalter setzt sich danach automatisch zurück."
+
+msgctxt "#32146"
+msgid "What to show"
+msgstr "Anzuzeigende Informationen"
+
+msgctxt "#32147"
+msgid "Poster (use TMDB cover)"
+msgstr "Poster (TMDB-Cover verwenden)"
+
+msgctxt "#32148"
+msgid "Use the TMDB cover image instead of the server cover. Recommended – TMDB covers are usually higher quality."
+msgstr "TMDB-Cover anstelle des Server-Covers verwenden. Empfohlen – TMDB-Cover sind meist hochwertiger."
+
+msgctxt "#32149"
+msgid "Background image (Fanart)"
+msgstr "Hintergrundbild (Fanart)"
+
+msgctxt "#32150"
+msgid "Show a large background image in the detail view. Uses more storage in Kodi's image cache."
+msgstr "Großes Hintergrundbild in der Detailansicht anzeigen. Benötigt mehr Speicherplatz im Kodi-Bilder-Cache."
+
+msgctxt "#32151"
+msgid "Description (Plot)"
+msgstr "Beschreibung (Plot)"
+
+msgctxt "#32152"
+msgid "Show the film description in the info dialog."
+msgstr "Filmbeschreibung im Info-Dialog anzeigen."
+
+msgctxt "#32153"
+msgid "Rating"
+msgstr "Bewertung"
+
+msgctxt "#32154"
+msgid "Show the TMDB rating (e.g. ★ 7.4) in the info dialog."
+msgstr "TMDB-Bewertung (z.B. ★ 7.4) im Info-Dialog anzeigen."
+
+msgctxt "#32155"
+msgid "Genre names"
+msgstr "Genre-Namen"
+
+msgctxt "#32156"
+msgid "Show genre names in the info dialog (e.g. Action, Comedy). Downloads a genre list from TMDB once and caches it for 30 days."
+msgstr "Genre-Namen im Info-Dialog anzeigen (z.B. Action, Komödie). Lädt einmalig eine Genre-Liste von TMDB und speichert sie 30 Tage."

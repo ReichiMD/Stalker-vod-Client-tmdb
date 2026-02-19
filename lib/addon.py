@@ -6,6 +6,7 @@ import re
 import math
 import json
 import os
+import time
 from urllib.parse import parse_qsl
 import xbmc
 import xbmcgui
@@ -16,10 +17,24 @@ from .stalker_cache import StalkerCache
 from .utils import ask_for_input, get_int_value
 from .api import Api
 from .loggers import Logger
-from .tmdb import TmdbClient
+from .tmdb import TmdbClient, TmdbRateLimitError
 
 
 _tmdb_client_singleton = None
+_rate_limit_notified = False  # show the rate-limit toast only once per plugin run
+
+
+def _show_rate_limit_notification():
+    """Show a small Kodi toast notification about the TMDB rate limit (once per run)."""
+    global _rate_limit_notified
+    if not _rate_limit_notified:
+        _rate_limit_notified = True
+        xbmc.executebuiltin(
+            'Notification(Stalker VOD,'
+            'TMDB-Limit erreicht – Metadaten für diese Seite pausiert.,'
+            '6000,'
+            'DefaultIconWarning.png)'
+        )
 
 
 def _get_tmdb_client():
@@ -33,7 +48,7 @@ def _get_tmdb_client():
     if not cfg.enabled or not cfg.api_key:
         return None
     if _tmdb_client_singleton is None:
-        _tmdb_client_singleton = TmdbClient(cfg.api_key, cfg.language)
+        _tmdb_client_singleton = TmdbClient(cfg.api_key, cfg.language, cfg.cache_days)
     return _tmdb_client_singleton
 
 
@@ -41,7 +56,12 @@ def _apply_tmdb_movie(list_item, video_info, title, year, stalker_poster):
     """Enrich a movie ListItem with TMDB data. Always calls setArt."""
     tmdb = _get_tmdb_client()
     if tmdb is not None:
-        info = tmdb.get_movie_info(title, year if year else None)
+        try:
+            info = tmdb.get_movie_info(title, year if year else None)
+        except TmdbRateLimitError:
+            _show_rate_limit_notification()
+            list_item.setArt({'poster': stalker_poster})
+            return
         if info:
             _apply_tmdb_to_item(list_item, video_info, info, stalker_poster)
             return
@@ -52,7 +72,12 @@ def _apply_tmdb_tv(list_item, video_info, title, year, stalker_poster):
     """Enrich a TV/Series ListItem with TMDB data. Always calls setArt."""
     tmdb = _get_tmdb_client()
     if tmdb is not None:
-        info = tmdb.get_tv_info(title, year if year else None)
+        try:
+            info = tmdb.get_tv_info(title, year if year else None)
+        except TmdbRateLimitError:
+            _show_rate_limit_notification()
+            list_item.setArt({'poster': stalker_poster})
+            return
         if info:
             _apply_tmdb_to_item(list_item, video_info, info, stalker_poster)
             return
@@ -60,22 +85,29 @@ def _apply_tmdb_tv(list_item, video_info, title, year, stalker_poster):
 
 
 def _apply_tmdb_to_item(list_item, video_info, info, stalker_poster):
-    """Write TMDB fields onto a ListItem/InfoTagVideo."""
+    """Write TMDB fields onto a ListItem/InfoTagVideo.
+
+    Each field is only applied if the corresponding setting is enabled.
+    tmdb_id and year are always applied (no bandwidth cost, pure metadata).
+    """
+    cfg = G.tmdb_config
     if info.get('tmdb_id'):
         video_info.setUniqueID('tmdb', info['tmdb_id'], True)
         list_item.setProperty('tmdb_id', info['tmdb_id'])
-    if info.get('plot'):
+    if cfg.use_plot and info.get('plot'):
         video_info.setPlot(info['plot'])
         video_info.setPlotOutline(info['plot'])
-    if info.get('rating'):
+    if cfg.use_rating and info.get('rating'):
         try:
             video_info.setRating('tmdb', float(info['rating']), info.get('votes', 0), True)
         except TypeError:
             pass
     if info.get('year') and info['year'] > 0:
         video_info.setYear(info['year'])
-    poster = info.get('poster') or stalker_poster
-    fanart = info.get('fanart')
+    if cfg.use_genres and info.get('genres'):
+        video_info.setGenres(info['genres'])
+    poster = (info.get('poster') if cfg.use_poster else None) or stalker_poster
+    fanart = info.get('fanart') if cfg.use_fanart else None
     art = {'poster': poster}
     if fanart:
         art['fanart'] = fanart
@@ -815,6 +847,7 @@ class StalkerAddon:
                 stalker_cache.set_videos(cat_type, category['id'], result.get('data', []))
 
                 if tmdb:
+                    rate_limit_hit = False
                     for video in result.get('data', []):
                         if not silent and progress.iscanceled():
                             break
@@ -822,11 +855,28 @@ class StalkerAddon:
                             progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
                         year = get_int_value(video, 'year')
                         year = year if year != 0 else None
-                        if cat_type == 'series' or video.get('series'):
-                            tmdb.get_tv_info(video['name'], year)
-                        else:
-                            tmdb.get_movie_info(video['name'], year)
+                        try:
+                            if cat_type == 'series' or video.get('series'):
+                                tmdb.get_tv_info(video['name'], year)
+                            else:
+                                tmdb.get_movie_info(video['name'], year)
+                        except TmdbRateLimitError:
+                            rate_limit_hit = True
+                            break
                     tmdb.flush()
+                    if rate_limit_hit:
+                        G.addon_config.max_page_limit = original_limit
+                        if not silent and progress:
+                            progress.close()
+                        if not silent:
+                            xbmcgui.Dialog().ok(
+                                'Stalker VOD – TMDB abgebrochen',
+                                'TMDB hat zu viele Anfragen in Folge blockiert.[CR][CR]'
+                                'Der Download wurde sicherheitshalber gestoppt.[CR]'
+                                'Die bereits geladenen Daten wurden gespeichert.[CR][CR]'
+                                'Bitte warte einige Minuten und versuche es erneut.'
+                            )
+                        return
 
             G.addon_config.max_page_limit = original_limit
             if not silent and not progress.iscanceled():
@@ -903,17 +953,33 @@ class StalkerAddon:
                 total_new += len(new_items)
 
                 if tmdb:
+                    rate_limit_hit = False
                     for video in new_items:
                         if progress.iscanceled():
                             break
                         progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
                         year = get_int_value(video, 'year')
                         year = year if year != 0 else None
-                        if cat_type == 'series' or video.get('series'):
-                            tmdb.get_tv_info(video['name'], year)
-                        else:
-                            tmdb.get_movie_info(video['name'], year)
+                        try:
+                            if cat_type == 'series' or video.get('series'):
+                                tmdb.get_tv_info(video['name'], year)
+                            else:
+                                tmdb.get_movie_info(video['name'], year)
+                        except TmdbRateLimitError:
+                            rate_limit_hit = True
+                            break
                     tmdb.flush()
+                    if rate_limit_hit:
+                        G.addon_config.max_page_limit = original_limit
+                        progress.close()
+                        xbmcgui.Dialog().ok(
+                            'Stalker VOD – TMDB abgebrochen',
+                            'TMDB hat zu viele Anfragen in Folge blockiert.[CR][CR]'
+                            'Der Download wurde sicherheitshalber gestoppt.[CR]'
+                            'Die bereits geladenen Daten wurden gespeichert.[CR][CR]'
+                            'Bitte warte einige Minuten und versuche es erneut.'
+                        )
+                        return
 
             G.addon_config.max_page_limit = original_limit
             if not progress.iscanceled():
@@ -970,6 +1036,172 @@ class StalkerAddon:
             'Stalker VOD',
             '{} von {} Ordnern werden angezeigt.'.format(count_visible, count_total))
 
+    @staticmethod
+    def __tmdb_refresh_now():
+        """Fetch TMDB metadata for all films already in the local Stalker cache.
+
+        Does NOT re-download Stalker data – only fills/updates the TMDB cache.
+        Skips films whose TMDB entry is still fresh.
+        """
+        tmdb = _get_tmdb_client()
+        if tmdb is None:
+            xbmcgui.Dialog().ok(
+                'Stalker VOD',
+                'TMDB ist nicht aktiviert oder kein API-Key eingegeben.[CR]'
+                'Bitte TMDB zuerst im TMDB-Tab einrichten.'
+            )
+            return
+
+        stalker_cache = StalkerCache(G.addon_config.token_path)
+        vod_cats = _apply_category_filter(
+            stalker_cache.get_categories('vod') or [],
+            G.get_filter_file_path('vod')
+        )
+        series_cats = _apply_category_filter(
+            stalker_cache.get_categories('series') or [],
+            G.get_filter_file_path('series')
+        )
+        work = [('vod', c) for c in vod_cats] + [('series', c) for c in series_cats]
+        total = len(work)
+
+        if total == 0:
+            xbmcgui.Dialog().ok(
+                'Stalker VOD',
+                'Kein lokaler Stalker-Cache vorhanden.[CR]'
+                'Erst "Alle Daten aktualisieren" im Cache-Tab ausführen.'
+            )
+            return
+
+        progress = xbmcgui.DialogProgress()
+        progress.create('TMDB-Metadaten laden', 'Starte...')
+        try:
+            for idx, (cat_type, category) in enumerate(work):
+                if progress.iscanceled():
+                    break
+                pct = int(idx * 100 / total)
+                cat_name = category['title']
+                progress.update(pct, '[{}/{}] {}'.format(idx + 1, total, cat_name))
+                videos = stalker_cache.get_videos(cat_type, category['id']) or []
+                rate_limit_hit = False
+                for video in videos:
+                    if progress.iscanceled():
+                        break
+                    progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
+                    year = get_int_value(video, 'year')
+                    year = year if year != 0 else None
+                    try:
+                        if cat_type == 'series' or video.get('series'):
+                            tmdb.get_tv_info(video['name'], year)
+                        else:
+                            tmdb.get_movie_info(video['name'], year)
+                    except TmdbRateLimitError:
+                        rate_limit_hit = True
+                        break
+                tmdb.flush()
+                if rate_limit_hit:
+                    progress.close()
+                    xbmcgui.Dialog().ok(
+                        'Stalker VOD – TMDB abgebrochen',
+                        'TMDB hat zu viele Anfragen in Folge blockiert.[CR][CR]'
+                        'Der Download wurde sicherheitshalber gestoppt.[CR]'
+                        'Die bereits geladenen Daten wurden gespeichert.[CR][CR]'
+                        'Bitte warte einige Minuten und versuche es erneut.'
+                    )
+                    return
+            if not progress.iscanceled():
+                progress.update(100, 'TMDB-Metadaten vollständig geladen!')
+                xbmc.sleep(1500)
+        finally:
+            progress.close()
+
+    @staticmethod
+    def __tmdb_clear_cache():
+        """Delete the local TMDB cache file."""
+        cache_path = os.path.join(G.addon_config.token_path, 'tmdb_cache.json')
+        if not xbmcvfs.exists(cache_path):
+            xbmcgui.Dialog().ok('TMDB-Cache', 'Kein Cache vorhanden – nichts zu löschen.')
+            return
+        if xbmcvfs.delete(cache_path):
+            xbmcgui.Dialog().ok(
+                'TMDB-Cache gelöscht',
+                'Der TMDB-Cache wurde gelöscht.[CR]'
+                'Beim nächsten Öffnen eines Ordners werden die Daten neu heruntergeladen.'
+            )
+        else:
+            xbmcgui.Dialog().ok('TMDB-Cache', 'Fehler: Cache konnte nicht gelöscht werden.')
+
+    @staticmethod
+    def __show_tmdb_cache_info():
+        """Show TMDB cache statistics: entry count, age, expiry, file size."""
+        import json
+        cache_path = os.path.join(G.addon_config.token_path, 'tmdb_cache.json')
+        cache_days = G.tmdb_config.cache_days
+
+        if not xbmcvfs.exists(cache_path):
+            xbmcgui.Dialog().ok(
+                'TMDB-Cache Info',
+                'Kein Cache vorhanden.[CR]'
+                'Erst "Alle Daten aktualisieren" ausführen.'
+            )
+            return
+
+        try:
+            with xbmcvfs.File(cache_path, 'r') as fh:
+                content = fh.read()
+            cache = json.loads(content) if content else {}
+        except Exception:
+            xbmcgui.Dialog().ok('TMDB-Cache Info', 'Cache-Datei konnte nicht gelesen werden.')
+            return
+
+        now = time.time()
+        genre_keys = {'__genres_movie__', '__genres_tv__'}
+        film_entries = {k: v for k, v in cache.items() if k not in genre_keys and isinstance(v, dict)}
+
+        if not film_entries:
+            xbmcgui.Dialog().ok('TMDB-Cache Info', 'Cache ist leer.\nNoch keine TMDB-Daten heruntergeladen.')
+            return
+
+        timestamps = [v.get('ts', now) for v in film_entries.values()]
+        oldest_ts = min(timestamps)
+        newest_ts = max(timestamps)
+        oldest_days = int((now - oldest_ts) / 86400.0)
+        newest_days = int((now - newest_ts) / 86400.0)
+        expires_in_days = cache_days - oldest_days
+
+        if expires_in_days > 0:
+            expiry_str = 'noch {} Tage'.format(expires_in_days)
+        else:
+            expiry_str = 'abgelaufen (wird beim nächsten Zugriff erneuert)'
+
+        try:
+            stat = xbmcvfs.Stat(cache_path)
+            size_bytes = stat.st_size()
+            if size_bytes < 1024 * 1024:
+                size_str = '{:.0f} KB'.format(size_bytes / 1024.0)
+            else:
+                size_str = '{:.2f} MB'.format(size_bytes / (1024.0 * 1024.0))
+        except Exception:
+            size_str = 'unbekannt'
+
+        newest_str = 'heute' if newest_days == 0 else 'vor {} Tag(en)'.format(newest_days)
+        oldest_str = 'heute' if oldest_days == 0 else 'vor {} Tag(en)'.format(oldest_days)
+
+        xbmcgui.Dialog().ok(
+            'TMDB-Cache Info',
+            'Gespeicherte Einträge: {} Filme[CR]'
+            'Neuester Eintrag: {}[CR]'
+            'Ältester Eintrag: {}[CR]'
+            'Läuft ab in: {} (Einstellung: {} Tage)[CR]'
+            'Cache-Größe: {}'.format(
+                len(film_entries),
+                newest_str,
+                oldest_str,
+                expiry_str,
+                cache_days,
+                size_str,
+            )
+        )
+
     def router(self, param_string):
         """Route calls"""
         params = dict(parse_qsl(param_string))
@@ -1016,6 +1248,12 @@ class StalkerAddon:
                 self.__update_new_data()
             elif params['action'] == 'manage_folders':
                 self.__manage_folder_selection(params)
+            elif params['action'] == 'tmdb_cache_info':
+                self.__show_tmdb_cache_info()
+            elif params['action'] == 'tmdb_refresh_now':
+                self.__tmdb_refresh_now()
+            elif params['action'] == 'tmdb_clear_cache':
+                self.__tmdb_clear_cache()
             else:
                 raise ValueError('Invalid param string: {}!'.format(param_string))
         else:
