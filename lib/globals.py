@@ -73,6 +73,10 @@ class GlobalVariables:
             self.addon_config.token_path = token_path
             self.addon_config.handle = int(sys.argv[1])
 
+            # Init loading settings
+            load_all_pages = self.__addon.getSetting('load_all_pages') == 'true'
+            self.addon_config.max_page_limit = 9999 if load_all_pages else 2
+
             # Init Portal settings
             self.portal_config.mac_cookie = 'mac=' + self.__addon.getSetting('mac_address')
             self.portal_config.device_id = self.__addon.getSetting('device_id')

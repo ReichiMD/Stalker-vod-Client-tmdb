@@ -95,3 +95,11 @@ msgstr "Language (e.g. de-DE, en-US)"
 msgctxt "#32107"
 msgid "TMDB metadata language code. Default: de-DE"
 msgstr "TMDB metadata language code. Default: de-DE"
+
+msgctxt "#32108"
+msgid "Load all pages at once"
+msgstr "Load all pages at once"
+
+msgctxt "#32109"
+msgid "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
+msgstr "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."

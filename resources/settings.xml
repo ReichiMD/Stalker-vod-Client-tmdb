@@ -20,6 +20,14 @@
                 </setting>
             </group>
 
+            <group id="pagination" label="32108">
+                <setting id="load_all_pages" type="boolean" label="32108" help="32109">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
+
             <group id="device_info" label="32006">
                 <setting id="mac_address" type="string" label="32007" help="">
                     <level>0</level>
