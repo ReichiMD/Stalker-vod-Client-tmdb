@@ -12,6 +12,7 @@ import xbmcgui
 import xbmcplugin
 import xbmcvfs
 from .globals import G
+from .stalker_cache import StalkerCache
 from .utils import ask_for_input, get_int_value
 from .api import Api
 from .loggers import Logger
@@ -222,7 +223,12 @@ class StalkerAddon:
         url = G.get_plugin_url({'action': 'vod_search', 'fav': 0, 'isContextMenuSearch': False})
         xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
-        categories = _apply_category_filter(Api.get_vod_categories(), G.get_filter_file_path('vod'))
+        stalker_cache = StalkerCache(G.addon_config.token_path)
+        raw_cats = stalker_cache.get_categories('vod')
+        if raw_cats is None:
+            raw_cats = Api.get_vod_categories() or []
+            stalker_cache.set_categories('vod', raw_cats)
+        categories = _apply_category_filter(raw_cats, G.get_filter_file_path('vod'))
         for category in categories:
             list_item = xbmcgui.ListItem(label=category['title'])
             fav_url = G.get_plugin_url({'action': 'vod_listing', 'category': category['title'], 'category_id': category['id'], 'page': 1,
@@ -251,7 +257,13 @@ class StalkerAddon:
         url = G.get_plugin_url({'action': 'series_search', 'fav': 0, 'isContextMenuSearch': False})
         xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
-        categories = _apply_category_filter(Api.get_series_categories(), G.get_filter_file_path('series'))
+        stalker_cache = StalkerCache(G.addon_config.token_path)
+        raw_cats = stalker_cache.get_categories('series')
+        if raw_cats is None:
+            raw = Api.get_series_categories()
+            raw_cats = raw if isinstance(raw, list) else []
+            stalker_cache.set_categories('series', raw_cats)
+        categories = _apply_category_filter(raw_cats, G.get_filter_file_path('series'))
         for category in categories:
             list_item = xbmcgui.ListItem(label=category['title'])
             fav_url = G.get_plugin_url({'action': 'series_listing', 'category': category['title'], 'category_id': category['id'], 'page': 1,
@@ -313,7 +325,20 @@ class StalkerAddon:
         plugin_category = 'VOD - ' + params['category'] if params.get('fav', '0') != '1' else 'VOD - ' + params['category'] + ' - FAVORITES'
         xbmcplugin.setPluginCategory(G.get_handle(), plugin_category)
         xbmcplugin.setContent(G.get_handle(), 'videos')
-        videos = Api.get_videos(params['category_id'], params['page'], search_term, params.get('fav', 0))
+        # load_all_pages=true (Variant 2): all films at once.
+        #   Cache ON  → instant from local cache (falls back to server if cache empty).
+        #   Cache OFF → all pages from server (slower).
+        # load_all_pages=false (Variant 1): paginated from server (~20 per page).
+        #   Cache is not used for pagination – server is always the source.
+        videos = None
+        load_all = G.addon_config.max_page_limit >= 9999
+        use_cache = G.addon_config.cache_enabled
+        if load_all and use_cache and not search_term.strip() and str(params.get('fav', '0')) == '0':
+            cached = StalkerCache(G.addon_config.token_path).get_videos('vod', params['category_id'])
+            if cached is not None:
+                videos = {'data': cached, 'total_items': len(cached), 'max_page_items': len(cached)}
+        if videos is None:
+            videos = Api.get_videos(params['category_id'], params['page'], search_term, params.get('fav', 0))
         StalkerAddon.__create_video_listing(videos, params)
 
     @staticmethod
@@ -350,7 +375,20 @@ class StalkerAddon:
         plugin_category = 'SERIES - ' + params['category'] if params.get('fav', '0') != '1' else 'SERIES - ' + params['category'] + ' - FAVORITES'
         xbmcplugin.setPluginCategory(G.get_handle(), plugin_category)
         xbmcplugin.setContent(G.get_handle(), 'videos')
-        series = Api.get_series(params['category_id'], params['page'], search_term, params.get('fav', 0))
+        # load_all_pages=true (Variant 2): all series at once.
+        #   Cache ON  → instant from local cache (falls back to server if cache empty).
+        #   Cache OFF → all pages from server (slower).
+        # load_all_pages=false (Variant 1): paginated from server (~20 per page).
+        #   Cache is not used for pagination – server is always the source.
+        series = None
+        load_all = G.addon_config.max_page_limit >= 9999
+        use_cache = G.addon_config.cache_enabled
+        if load_all and use_cache and not search_term.strip() and str(params.get('fav', '0')) == '0':
+            cached = StalkerCache(G.addon_config.token_path).get_videos('series', params['category_id'])
+            if cached is not None:
+                series = {'data': cached, 'total_items': len(cached), 'max_page_items': len(cached)}
+        if series is None:
+            series = Api.get_series(params['category_id'], params['page'], search_term, params.get('fav', 0))
         StalkerAddon.__create_series_listing(series, params)
 
     @staticmethod
@@ -713,8 +751,100 @@ class StalkerAddon:
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=False, cacheToDisc=False)
 
     @staticmethod
-    def __refresh_all_data():
-        """Pre-fetch all VOD/Series categories and warm the TMDB cache with a progress dialog."""
+    def __refresh_all_data(silent=False):
+        """Pre-fetch all VOD/Series categories and video lists.
+
+        Saves results to the local Stalker cache (always) and warms the
+        TMDB cache if TMDB is enabled.
+
+        silent=True: no progress dialog, runs as background task (triggered
+        by the daily service check on Kodi start).
+        """
+        stalker_cache = StalkerCache(G.addon_config.token_path)
+        progress = None
+        if not silent:
+            progress = xbmcgui.DialogProgress()
+            progress.create('Stalker VOD', 'Kategorien werden geladen...')
+        try:
+            original_limit = G.addon_config.max_page_limit
+            G.addon_config.max_page_limit = 9999
+
+            # --- Fetch and cache category lists ---
+            vod_cats = []
+            series_cats = []
+            try:
+                vod_cats = Api.get_vod_categories() or []
+                stalker_cache.set_categories('vod', vod_cats)
+            except Exception:
+                pass
+            try:
+                raw = Api.get_series_categories()
+                series_cats = raw if isinstance(raw, list) else []
+                stalker_cache.set_categories('series', series_cats)
+            except Exception:
+                pass
+
+            # Apply folder filter so only visible folders are refreshed
+            vod_cats = _apply_category_filter(vod_cats, G.get_filter_file_path('vod'))
+            series_cats = _apply_category_filter(series_cats, G.get_filter_file_path('series'))
+
+            work = [('vod', c) for c in vod_cats] + [('series', c) for c in series_cats]
+            total = len(work)
+            if total == 0:
+                if not silent:
+                    xbmcgui.Dialog().ok('Stalker VOD', 'Keine Kategorien gefunden.')
+                return
+
+            tmdb = _get_tmdb_client()
+            for idx, (cat_type, category) in enumerate(work):
+                if not silent and progress.iscanceled():
+                    break
+                pct = int(idx * 100 / total)
+                cat_name = category['title']
+                if not silent:
+                    progress.update(pct, '[{}/{}] {}'.format(idx + 1, total, cat_name))
+                try:
+                    if cat_type == 'vod':
+                        result = Api.get_videos(category['id'], 1, '', 0)
+                    else:
+                        result = Api.get_series(category['id'], 1, '', 0)
+                except Exception:
+                    continue
+
+                # Save video list to local Stalker cache
+                stalker_cache.set_videos(cat_type, category['id'], result.get('data', []))
+
+                if tmdb:
+                    for video in result.get('data', []):
+                        if not silent and progress.iscanceled():
+                            break
+                        if not silent:
+                            progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
+                        year = get_int_value(video, 'year')
+                        year = year if year != 0 else None
+                        if cat_type == 'series' or video.get('series'):
+                            tmdb.get_tv_info(video['name'], year)
+                        else:
+                            tmdb.get_movie_info(video['name'], year)
+                    tmdb.flush()
+
+            G.addon_config.max_page_limit = original_limit
+            if not silent and not progress.iscanceled():
+                progress.update(100, 'Aktualisierung abgeschlossen!')
+                xbmc.sleep(1500)
+        finally:
+            if not silent and progress:
+                progress.close()
+
+    @staticmethod
+    def __update_new_data():
+        """Delta update: fetch new films from server, add to cache.
+
+        Existing cached items are kept untouched.
+        TMDB metadata is only fetched for genuinely new films.
+        If TMDB is disabled or no key is set, the TMDB step is simply skipped.
+        """
+        stalker_cache = StalkerCache(G.addon_config.token_path)
         progress = xbmcgui.DialogProgress()
         progress.create('Stalker VOD', 'Kategorien werden geladen...')
         try:
@@ -733,7 +863,6 @@ class StalkerAddon:
             except Exception:
                 pass
 
-            # Apply folder filter so only visible folders are refreshed
             vod_cats = _apply_category_filter(vod_cats, G.get_filter_file_path('vod'))
             series_cats = _apply_category_filter(series_cats, G.get_filter_file_path('series'))
 
@@ -744,6 +873,7 @@ class StalkerAddon:
                 return
 
             tmdb = _get_tmdb_client()
+            total_new = 0
             for idx, (cat_type, category) in enumerate(work):
                 if progress.iscanceled():
                     break
@@ -757,8 +887,23 @@ class StalkerAddon:
                         result = Api.get_series(category['id'], 1, '', 0)
                 except Exception:
                     continue
+
+                server_items = result.get('data', [])
+                cached_items = stalker_cache.get_videos(cat_type, category['id']) or []
+                cached_ids = {str(v.get('id', '')) for v in cached_items}
+
+                # Only process films not yet in cache
+                new_items = [v for v in server_items if str(v.get('id', '')) not in cached_ids]
+                if not new_items:
+                    continue
+
+                # New items first so they appear at the top in Variant 2
+                merged = new_items + cached_items
+                stalker_cache.set_videos(cat_type, category['id'], merged)
+                total_new += len(new_items)
+
                 if tmdb:
-                    for video in result.get('data', []):
+                    for video in new_items:
                         if progress.iscanceled():
                             break
                         progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
@@ -772,7 +917,7 @@ class StalkerAddon:
 
             G.addon_config.max_page_limit = original_limit
             if not progress.iscanceled():
-                progress.update(100, 'Aktualisierung abgeschlossen!')
+                progress.update(100, '{} neue Inhalte hinzugefügt.'.format(total_new))
                 xbmc.sleep(1500)
         finally:
             progress.close()
@@ -866,7 +1011,9 @@ class StalkerAddon:
             elif params['action'] == 'add_fav':
                 self.__toggle_favorites(params['video_id'], True, params['_type'])
             elif params['action'] == 'refresh_all':
-                self.__refresh_all_data()
+                self.__refresh_all_data(silent=params.get('silent') == '1')
+            elif params['action'] == 'update_new_data':
+                self.__update_new_data()
             elif params['action'] == 'manage_folders':
                 self.__manage_folder_selection(params)
             else:

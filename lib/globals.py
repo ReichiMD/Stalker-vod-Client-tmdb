@@ -35,6 +35,7 @@ class AddOnConfig:
     max_page_limit: int = 2
     max_retries: int = 3
     token_path: str = None
+    cache_enabled: bool = True
 
 
 @dataclasses.dataclass
@@ -82,9 +83,11 @@ class GlobalVariables:
             self.addon_config.token_path = token_path
             self.addon_config.handle = int(sys.argv[1])
 
-            # Init loading settings
+            # Init loading/cache settings
             load_all_pages = self.__addon.getSetting('load_all_pages') == 'true'
             self.addon_config.max_page_limit = 9999 if load_all_pages else 2
+            # cache_enabled defaults to true; only false when explicitly set to 'false'
+            self.addon_config.cache_enabled = self.__addon.getSetting('cache_enabled') != 'false'
 
             # Init Portal settings
             self.portal_config.mac_cookie = 'mac=' + self.__addon.getSetting('mac_address')

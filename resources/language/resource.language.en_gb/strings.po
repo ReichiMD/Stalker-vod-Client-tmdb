@@ -101,8 +101,8 @@ msgid "Load all pages at once"
 msgstr "Load all pages at once"
 
 msgctxt "#32109"
-msgid "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
-msgstr "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
+msgid "ON = show all films at once (from local cache if available, otherwise all pages from server – slower on first load). OFF = paginated (~20 films per page with Next/Previous buttons)."
+msgstr "ON = show all films at once (from local cache if available, otherwise all pages from server – slower on first load). OFF = paginated (~20 films per page with Next/Previous buttons)."
 
 msgctxt "#32110"
 msgid "Refresh all data (activate to start)"
@@ -187,3 +187,27 @@ msgstr "TV genres – open selection (toggle to open)"
 msgctxt "#32130"
 msgid "Opens a checklist of all TV genres. Check the ones you want to see. Toggle resets itself automatically."
 msgstr "Opens a checklist of all TV genres. Check the ones you want to see. Toggle resets itself automatically."
+
+msgctxt "#32131"
+msgid "Cache"
+msgstr "Cache"
+
+msgctxt "#32132"
+msgid "Cache settings"
+msgstr "Cache settings"
+
+msgctxt "#32133"
+msgid "Use local cache"
+msgstr "Use local cache"
+
+msgctxt "#32134"
+msgid "Saves all films locally. Opening a folder for the second time is instant (under 1 second). The cache is refreshed automatically once a day in the background."
+msgstr "Saves all films locally. Opening a folder for the second time is instant (under 1 second). The cache is refreshed automatically once a day in the background."
+
+msgctxt "#32135"
+msgid "Add new content only (toggle to start)"
+msgstr "Add new content only (toggle to start)"
+
+msgctxt "#32136"
+msgid "Checks for new films and adds them to the cache. Existing data is kept. Only new films get TMDB metadata fetched. Toggle resets itself automatically."
+msgstr "Checks for new films and adds them to the cache. Existing data is kept. Only new films get TMDB metadata fetched. Toggle resets itself automatically."

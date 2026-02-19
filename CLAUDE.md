@@ -192,7 +192,7 @@ damit TMDb Helper optional eigene Overlays/Details anzeigen kann. Pflicht ist es
 | `lib/api.py` | Stalker Middleware API Client |
 | `lib/auth.py` | Stalker Authentifizierung / Token-Verwaltung |
 | `resources/settings.xml` | Kodi Einstellungen (zwei Sections, gleiche Addon-ID) |
-| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32100–32114) – immer parallel in `de_de/strings.po` pflegen! |
+| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32001–32136) – immer parallel in `de_de/strings.po` pflegen! |
 | `resources/language/resource.language.de_de/strings.po` | Deutsche Übersetzung aller Strings – Kodi lädt sie automatisch bei dt. Sprache |
 
 ---
@@ -302,41 +302,114 @@ Das würde die Ladezeit für unkachet Filme verdoppeln (~600ms statt ~300ms pro 
 
 ---
 
-## Laden-Strategie & Bulk-Refresh
+## Laden-Strategie & Cache-System
 
-### "Alle Seiten laden" (`load_all_pages`)
+### Übersicht: 4 Einstellungen im Abschnitt [Cache]
 
-Standardmäßig lädt das Addon `max_page_limit = 2` Server-Seiten pro Kodi-Listing-Seite.
-Mit `load_all_pages = true` wird `max_page_limit = 9999` gesetzt → alle Seiten werden auf einmal abgerufen.
+| Setting-ID | Typ | Standard | Bedeutung |
+|---|---|---|---|
+| `cache_enabled` | boolean | `true` | Lokalen Stalker-Cache verwenden (ja/nein) |
+| `load_all_pages` | boolean | `false` | Alle Seiten auf einmal laden statt paginiert |
+| `refresh_all_data` | boolean | `false` | Alles löschen + komplett neu laden |
+| `update_new_data` | boolean | `false` | Nur neue Inhalte zum Cache hinzufügen |
 
-**Wann sinnvoll:**
-- TMDB deaktiviert: kein Metadaten-Overhead, nur Stalker-Daten → gesamte Kategorie in 1–3s
-- TMDB aktiviert: nicht empfohlen (erste Nutzung: jeder Film ~300ms → bei 200 Filmen ~60s)
+---
 
-**Wo gesetzt:** `globals.py::init_globals()` → `self.addon_config.max_page_limit`
+### Verhaltensmatrix: `cache_enabled` × `load_all_pages`
 
-### "Daten aktualisieren" Schalter (`refresh_all_data`)
+| `cache_enabled` | `load_all_pages` | Ergebnis beim Ordner öffnen |
+|---|---|---|
+| AUS | AUS | Seitenweise vom Server (~20 Filme, Weiter/Zurück-Schaltflächen) |
+| AUS | EIN | Alle Seiten vom Server auf einmal (langsam beim ersten Mal) |
+| **EIN** | AUS | Seitenweise vom Server – kein Cache-Nutzen für normale Ansicht |
+| **EIN** | EIN | Alle Filme sofort aus lokalem Cache ✓ (falls Cache leer → alle Seiten vom Server) |
+
+> **Empfehlung:** Beide EIN = schnellste Nutzererfahrung nach dem ersten Refresh.
+
+**Wo gesetzt:** `globals.py::init_globals()` → `self.addon_config.max_page_limit` und `self.addon_config.cache_enabled`
+
+**Codelogik in `__list_vod` / `__list_series`:**
+```python
+load_all = G.addon_config.max_page_limit >= 9999   # load_all_pages=true
+use_cache = G.addon_config.cache_enabled
+if load_all and use_cache and not search_term.strip() and fav == '0':
+    cached = StalkerCache(...).get_videos(...)
+    if cached:
+        videos = {'data': cached, ...}   # sofort aus Cache
+if videos is None:
+    videos = Api.get_videos(...)         # Fallback: Server
+```
+
+---
+
+### "Alle Daten aktualisieren" (`refresh_all_data`)
 
 **Kein** `type="action"` – das funktioniert in Kodi 21 nicht (→ Regel 1 oben).
-Stattdessen: `type="boolean"` Toggle. Der Service erkennt `value == 'true'` in
-`onSettingsChanged()`, setzt den Schalter sofort zurück auf `false` und ruft
-`RunPlugin(...?action=refresh_all)` auf.
-Implementiert in `addon.py::__refresh_all_data()` + `lib/service.py::onSettingsChanged()`.
+Stattdessen `type="boolean"` Toggle. Service erkennt `value == 'true'` in
+`onSettingsChanged()`, setzt sofort zurück auf `false`, ruft `RunPlugin(...?action=refresh_all)` auf.
+
+**Implementiert in:** `addon.py::__refresh_all_data()` + `lib/service.py::onSettingsChanged()`
 
 **Ablauf:**
 1. Öffnet `xbmcgui.DialogProgress()` mit Abbrechen-Schaltfläche
-2. Lädt alle VOD-Kategorien + alle Series-Kategorien (je ein API-Call)
-3. Iteriert über jede Kategorie, lädt alle Videos (`max_page_limit=9999` temporär)
-4. Falls TMDB aktiv: ruft `tmdb.get_movie_info()` / `tmdb.get_tv_info()` pro Film auf → befüllt 30-Tage-Cache
-5. `tmdb.flush()` nach jeder Kategorie (1 Disk-Write pro Kategorie statt pro Film)
-6. Fortschrittsbalken zeigt `[Kategorie X/Y] Kategoriename: Filmname`
-7. Abbrechen jederzeit möglich (zwischen Filmen geprüft)
+2. Lädt alle VOD- + alle Series-Kategorien vom Server → speichert in Stalker-Cache
+3. Iteriert über jede Kategorie, lädt **alle** Videos (`max_page_limit=9999` temporär)
+4. Speichert Videolisten in lokalem Stalker-Cache (JSON pro Kategorie)
+5. Falls TMDB aktiv: holt Metadaten pro Film → befüllt 30-Tage-TMDB-Cache
+6. `tmdb.flush()` nach jeder Kategorie (1 Disk-Write statt N)
+7. Fortschrittsbalken: `[X/Y] Kategoriename: Filmtitel`
+8. Abbrechen jederzeit möglich
 
-**Primärer Nutzen:** TMDB-Cache vorwärmen. Nach einmaligem Durchlauf lädt jede Kategorie sofort.
-**Ohne TMDB:** Läuft durch, macht aber ohne Cache-Ziel wenig (Stalker-Daten werden nicht gecacht).
+**Primärer Nutzen:** Kompletten Cache aufbauen. Danach öffnet jede Kategorie sofort (<1s).
+**Silent-Modus:** `?action=refresh_all&silent=1` → kein Dialog (für Hintergrundnutzung durch Service).
 
-**Routing:** `router()` → `elif params['action'] == 'refresh_all': self.__refresh_all_data()`
-**Kein `endOfDirectory`-Call** – RunPlugin-Aktionen benötigen das nicht.
+---
+
+### "Nur neue Inhalte hinzufügen" (`update_new_data`)
+
+Gleicher Toggle-Workaround wie `refresh_all_data`. Service → `RunPlugin(...?action=update_new_data)`.
+
+**Implementiert in:** `addon.py::__update_new_data()` + `lib/service.py::onSettingsChanged()`
+
+**Ablauf:**
+1. Öffnet `xbmcgui.DialogProgress()` mit Abbrechen-Schaltfläche
+2. Lädt alle Kategorien (gefiltert)
+3. Für jede Kategorie: Serverliste holen → mit Cache vergleichen (nach `id`)
+4. **Nur neue Filme** → werden dem Cache vorangestellt (erscheinen oben)
+5. Falls TMDB aktiv: TMDB-Lookup nur für die neuen Filme → `tmdb.flush()`
+6. Vorhandene Filme + TMDB-Daten bleiben **unverändert**
+7. Zeigt am Ende: „X neue Inhalte hinzugefügt."
+
+**Wann benutzen:**
+- Regelmäßig (z.B. wöchentlich) um neue Veröffentlichungen einzuspielen
+- Deutlich schneller als `refresh_all_data` wenn der Katalog sich kaum ändert
+
+**Wenn TMDB nicht konfiguriert:** TMDB-Schritt wird einfach übersprungen – kein Fehler.
+
+---
+
+### Täglicher Hintergrund-Refresh (Service)
+
+Der `BackgroundService.run()` prüft beim Kodi-Start ob der Stalker-Cache älter als 24h ist.
+Falls ja → startet `refresh_all` im Silent-Modus lautlos im Hintergrund.
+
+**Respektiert `cache_enabled`:** Wenn der Nutzer den Cache deaktiviert hat, wird der
+tägliche Refresh nicht ausgelöst.
+
+**Prüfung:** `StalkerCache.categories_are_stale('vod')` → vergleicht Datei-Timestamp.
+
+---
+
+### Lokaler Stalker-Cache (`lib/stalker_cache.py`)
+
+| Inhalt | Datei | Gültigkeit |
+|---|---|---|
+| VOD-Kategorien | `stalker_categories_vod.json` | 24h |
+| Series-Kategorien | `stalker_categories_series.json` | 24h |
+| VOD-Videos (pro Kategorie) | `stalker_videos_vod_{id}.json` | 24h |
+| Series-Videos (pro Kategorie) | `stalker_videos_series_{id}.json` | 24h |
+
+Alle Dateien liegen in `{kodi_profile}/plugin.video.stalkervod.tmdb/`.
 
 ---
 
@@ -434,27 +507,57 @@ plugin.video.stalkervod.tmdb/
 
 ## Einstellungen (settings.xml)
 
+Die `settings.xml` hat **vier `<section>`-Blöcke** mit der gleichen `id="plugin.video.stalkervod.tmdb"` –
+das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
+
+### Portal-Tab
+| Setting-ID | Typ | Bedeutung |
+|---|---|---|
+| `server_address` | string | Stalker-Server-URL |
+| `alternative_context_path` | boolean | `/portal.php` statt `/server/load.php` |
+| `mac_address` | string | MAC-Adresse des Geräts |
+| `serial_number` | string | Seriennummer |
+| `device_id` | string | Geräte-ID 1 |
+| `device_id_2` | string | Geräte-ID 2 |
+| `signature` | string | Signatur |
+
+### Ordner-Filter-Tab
+| Setting-ID | Typ | Bedeutung |
+|---|---|---|
+| `folder_filter_use_keywords` | boolean | Stichwörter-Filter aktiv |
+| `folder_filter_use_manual` | boolean | Manuelle Auswahl aktiv (hat Vorrang) |
+| `folder_filter_keywords` | string | Kommagetrennte Stichwörter |
+| `folder_filter_select_vod` | boolean | Toggle → öffnet VOD-Auswahldialog |
+| `folder_filter_select_series` | boolean | Toggle → öffnet Serien-Auswahldialog |
+| `folder_filter_select_tv` | boolean | Toggle → öffnet TV-Auswahldialog |
+
+### Cache-Tab ← NEU
+| Setting-ID | Typ | Standard | Bedeutung |
+|---|---|---|---|
+| `cache_enabled` | boolean | `true` | Lokalen Cache verwenden (aus = immer Server) |
+| `load_all_pages` | boolean | `false` | Alle Seiten auf einmal statt paginiert |
+| `refresh_all_data` | **boolean** (kein action!) | `false` | Alles löschen + komplett neu laden |
+| `update_new_data` | **boolean** (kein action!) | `false` | Nur neue Inhalte zum Cache hinzufügen |
+
+### TMDB-Tab
 | Setting-ID | Typ | Bedeutung |
 |---|---|---|
 | `tmdb_enabled` | boolean | TMDB-Anreicherung ein/aus |
 | `tmdb_api_key` | string (hidden) | Kostenloser Key von themoviedb.org |
-| `tmdb_language` | string | Sprache für Metadaten, default `de-DE` |
-| `load_all_pages` | boolean | Alle Server-Seiten auf einmal laden (max_page_limit=9999), Standard: false (=2 Seiten) |
-| `refresh_all_data` | **boolean** (kein action!) | Schalter-Workaround: einschalten → Service startet Refresh + setzt Schalter zurück |
+| `tmdb_language` | string | Sprach-Code für Metadaten, default `de-DE` |
 
-> **Wichtig:** `refresh_all_data` ist bewusst `type="boolean"`, obwohl es sich wie ein Button verhält.
-> Hintergrund: `type="action"` mit `<action>`-Child funktioniert in Kodi 21 nicht (→ Regel 1 oben).
-
-Die `settings.xml` hat **zwei `<section>`-Blöcke** mit der gleichen `id="plugin.video.stalkervod.tmdb"` –
-das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
+> **Wichtig:** Alle Schalter die wie Buttons wirken (`refresh_all_data`, `update_new_data`,
+> `folder_filter_select_*`) sind bewusst `type="boolean"`. Hintergrund: `type="action"` mit
+> `<action>`-Child funktioniert in Kodi 21 nicht (→ Regel 1 oben).
+> Der Service setzt jeden Schalter sofort zurück auf `false` nachdem er die Aktion gestartet hat.
 
 ---
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/fix-vod-folder-issue-bUQtt`
+- Branch: `claude/optimize-data-refresh-S8crk`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.1.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.5.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -462,6 +565,13 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Cache-Abschnitt in Einstellungen | `claude/optimize-data-refresh-S8crk` | Neuer `[Cache]`-Abschnitt: `cache_enabled` (an/aus), `load_all_pages` (hierhin verschoben), `refresh_all_data` (alles neu), `update_new_data` (nur neue Inhalte). |
+| Delta-Update (update_new_data) | `claude/optimize-data-refresh-S8crk` | Neuer Button: prüft auf neue Filme, fügt sie zum Cache hinzu, holt TMDB nur für neue Einträge. Vorhandene Daten bleiben erhalten. |
+| load_all_pages + Cache | `claude/optimize-data-refresh-S8crk` | `load_all_pages=false` (Standard) = Variante 1: Paginierung vom Server (~20 pro Seite). `load_all_pages=true` = Variante 2: alle Filme sofort aus Cache (oder alle Seiten vom Server wenn kein Cache). |
+| Lokaler Stalker-Cache | `claude/optimize-data-refresh-S8crk` | `lib/stalker_cache.py` – Kategorien + Videolisten werden 24h lokal gecacht (je eine JSON-Datei pro Kategorie). Öffnen eines Ordners beim 2. Mal ist sofort (<1s). |
+| Täglicher Hintergrund-Refresh | `claude/optimize-data-refresh-S8crk` | Service prüft beim Kodi-Start ob Cache älter als 24h ist → startet `refresh_all&silent=1` lautlos im Hintergrund. |
+| Refresh speichert Stalker-Daten | `claude/optimize-data-refresh-S8crk` | `refresh_all` ist jetzt auch ohne TMDB sinnvoll: speichert alle Videolisten in den lokalen Cache. |
+| Silent-Modus für Refresh | `claude/optimize-data-refresh-S8crk` | `?action=refresh_all&silent=1` – kein Fortschrittsdialog, für Hintergrundnutzung. |
 | Stichwort-Filter Wortgrenze-Fix | `claude/fix-vod-folder-issue-bUQtt` | `"de"` matchte als Teilstring auch `"nl-videoland"` → jetzt `\b`-Wortgrenzen per Regex |
 | Such-Filter fix | `claude/fix-vod-search-filtering-Fk1Ti` | Suche direkt ohne Gruppenauswahl-Dialog – immer alle sichtbaren Gruppen |
 | Gruppen-Filter in Suche | `claude/fix-vod-search-filtering-Fk1Ti` | Such-Dialog zeigte vorher ausgeblendete Gruppen an – jetzt gefiltert |
@@ -476,6 +586,7 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 | Idee | Aufwand | Effekt |
 |---|---|---|
+| Auth-Singleton (wie TMDB-Singleton) | klein | token.json wird aktuell pro API-Call neu gelesen – einmal pro Prozess reicht |
 | `fanart`/`votes` weglassen (optional per Setting) | mittel | weniger Kodi-Bandbreite |
 | Timeout für TMDB-Calls kürzen (aktuell 10s → 3s) | klein | hängt nicht 10s bei Offline-TMDB |
 | FSK-Altersfreigaben (zweiter API-Call pro Film nötig) | mittel | verdoppelt Ladezeit bei leerem Cache |

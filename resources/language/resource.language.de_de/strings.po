@@ -101,8 +101,8 @@ msgid "Load all pages at once"
 msgstr "Alle Seiten auf einmal laden"
 
 msgctxt "#32109"
-msgid "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
-msgstr "Lädt alle Inhalte auf einmal (längere Erstladezeit). Empfohlen wenn TMDB deaktiviert ist."
+msgid "ON = show all films at once (from local cache if available, otherwise all pages from server – slower on first load). OFF = paginated (~20 films per page with Next/Previous buttons)."
+msgstr "EIN = alle Filme sofort sichtbar (aus lokalem Cache wenn vorhanden, sonst alle Seiten vom Server – beim ersten Mal langsamer). AUS = seitenweise (~20 Filme pro Seite mit Weiter/Zurück)."
 
 msgctxt "#32110"
 msgid "Refresh all data (activate to start)"
@@ -187,3 +187,27 @@ msgstr "TV-Genres – Auswahl öffnen (einschalten zum Öffnen)"
 msgctxt "#32130"
 msgid "Opens a checklist of all TV genres. Check the ones you want to see. Toggle resets itself automatically."
 msgstr "Öffnet eine Auswahlliste aller TV-Genres. Hake die an, die du sehen möchtest. Der Schalter setzt sich danach automatisch zurück."
+
+msgctxt "#32131"
+msgid "Cache"
+msgstr "Cache"
+
+msgctxt "#32132"
+msgid "Cache settings"
+msgstr "Cache-Einstellungen"
+
+msgctxt "#32133"
+msgid "Use local cache"
+msgstr "Lokalen Cache verwenden"
+
+msgctxt "#32134"
+msgid "Saves all films locally. Opening a folder for the second time is instant (under 1 second). The cache is refreshed automatically once a day in the background."
+msgstr "Speichert alle Filme lokal. Ordner öffnet beim zweiten Besuch sofort (unter 1 Sekunde). Der Cache wird einmal täglich automatisch im Hintergrund erneuert."
+
+msgctxt "#32135"
+msgid "Add new content only (toggle to start)"
+msgstr "Nur neue Inhalte hinzufügen (einschalten zum Starten)"
+
+msgctxt "#32136"
+msgid "Checks for new films and adds them to the cache. Existing data is kept. Only new films get TMDB metadata fetched. Toggle resets itself automatically."
+msgstr "Prüft ob neue Filme vorhanden sind und fügt sie zum Cache hinzu. Vorhandene Daten bleiben erhalten. Nur für neue Filme werden TMDB-Daten geladen. Schalter setzt sich danach automatisch zurück."

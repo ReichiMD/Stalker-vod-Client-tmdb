@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.1" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.5" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,45 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.1.5  (2026-02-19)
+- New: Dedicated "Cache" settings section with 4 options:
+  • "Use local cache" toggle (on by default) – disable to always fetch
+    live from server (no local storage).
+  • "Load all pages at once" moved here from Portal section.
+  • "Refresh all data" – delete cache and reload everything (as before).
+  • "Add new content only" – delta update: keep existing data, only
+    fetch new films from server and add them to the cache. TMDB metadata
+    is loaded only for new films. Runs with a progress dialog.
+- Behaviour summary:
+    Cache OFF + Load all = OFF → paginated from server (~20/page)
+    Cache OFF + Load all = ON  → all pages from server (slower)
+    Cache ON  + Load all = OFF → paginated from server (~20/page)
+    Cache ON  + Load all = ON  → all films instantly from cache ✓
+
+v0.1.4  (2026-02-19)
+- Fix: "Alle Seiten laden" now works correctly together with the cache.
+  OFF (default) = Variant 1: server pagination, ~20 films per page with
+  Next/Previous buttons. Fast single pages from the server.
+  ON = Variant 2: all films at once – instantly from cache if available,
+  otherwise fetches all pages from server on first load.
+
+v0.1.3  (2026-02-19)
+- Fix: "Alle Seiten laden" (load_all_pages) setting works again.
+  When enabled the cache is bypassed and all pages are fetched fresh
+  directly from the server – so the setting has a clear effect again.
+  When disabled (default) the local cache is used for fast browsing.
+
+v0.1.2  (2026-02-19)
+- New: Local Stalker data cache (24 h). Category lists and all video
+  lists per folder are now saved to disk after the first load.
+  Opening a folder for the second time is instant (no server request).
+- New: Daily auto-refresh on Kodi start. The background service checks
+  if the cache is older than 24 hours and silently refreshes it in the
+  background – no dialog, no interruption.
+- Improvement: "Alle Daten aktualisieren" now saves Stalker video lists
+  to the local cache even when TMDB is disabled. The refresh is no
+  longer a no-op without TMDB.
+
 v0.1.1  (2026-02-19)
 - Fix: keyword folder filter now uses word-boundary matching instead of
   plain substring search. Previously the keyword "de" accidentally matched

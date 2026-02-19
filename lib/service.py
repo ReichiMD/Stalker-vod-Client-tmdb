@@ -25,12 +25,38 @@ class BackgroundService(Monitor):
         """ Background loop for maintenance tasks """
         Logger.debug('Service started')
 
+        # Give Kodi a few seconds to fully initialize before background tasks
+        if self.waitForAbort(5):
+            return
+
+        self._check_daily_cache_refresh()
+
         while not self.abortRequested():
             # Stop when abort requested
             if self.waitForAbort(10):
                 break
 
         Logger.debug('Service stopped')
+
+    def _check_daily_cache_refresh(self):
+        """Trigger a silent background refresh if the Stalker data cache is stale (> 24 h)."""
+        addon = xbmcaddon.Addon()
+        server = addon.getSetting('server_address')
+        mac = addon.getSetting('mac_address')
+        if not server or not mac:
+            return  # Not configured yet – nothing to refresh
+        # Respect cache_enabled setting (default true when not explicitly 'false')
+        if addon.getSetting('cache_enabled') == 'false':
+            return
+
+        profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+        from .stalker_cache import StalkerCache
+        cache = StalkerCache(profile)
+        if cache.categories_are_stale('vod'):
+            Logger.debug('Stalker cache stale – triggering silent background refresh')
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all&silent=1)'
+            )
 
     def onSettingsChanged(self):  # pylint: disable=invalid-name
         """React to setting changes:
@@ -39,11 +65,18 @@ class BackgroundService(Monitor):
         """
         addon = xbmcaddon.Addon()
 
-        # --- Manual refresh button (boolean toggle workaround) ---
+        # --- Manual refresh: delete all + reload ---
         if addon.getSetting('refresh_all_data') == 'true':
             addon.setSetting('refresh_all_data', 'false')
             xbmc.executebuiltin(
                 'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)')
+            return
+
+        # --- Delta update: only add new content ---
+        if addon.getSetting('update_new_data') == 'true':
+            addon.setSetting('update_new_data', 'false')
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data)')
             return
 
         # --- Folder filter selection buttons (boolean toggle workaround) ---
