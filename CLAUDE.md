@@ -40,7 +40,7 @@ damit TMDb Helper optional eigene Overlays/Details anzeigen kann. Pflicht ist es
 | `lib/api.py` | Stalker Middleware API Client |
 | `lib/auth.py` | Stalker Authentifizierung / Token-Verwaltung |
 | `resources/settings.xml` | Kodi Einstellungen (zwei Sections, gleiche Addon-ID) |
-| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32100–32107 = TMDB) |
+| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32100–32111 = TMDB + Laden + Refresh) |
 
 ---
 
@@ -149,6 +149,41 @@ Das würde die Ladezeit für unkachet Filme verdoppeln (~600ms statt ~300ms pro 
 
 ---
 
+## Laden-Strategie & Bulk-Refresh
+
+### "Alle Seiten laden" (`load_all_pages`)
+
+Standardmäßig lädt das Addon `max_page_limit = 2` Server-Seiten pro Kodi-Listing-Seite.
+Mit `load_all_pages = true` wird `max_page_limit = 9999` gesetzt → alle Seiten werden auf einmal abgerufen.
+
+**Wann sinnvoll:**
+- TMDB deaktiviert: kein Metadaten-Overhead, nur Stalker-Daten → gesamte Kategorie in 1–3s
+- TMDB aktiviert: nicht empfohlen (erste Nutzung: jeder Film ~300ms → bei 200 Filmen ~60s)
+
+**Wo gesetzt:** `globals.py::init_globals()` → `self.addon_config.max_page_limit`
+
+### "Daten aktualisieren" Button (`refresh_all_data`)
+
+Action-Button in den Einstellungen (Portal-Tab). Ruft `RunPlugin(...?action=refresh_all)` auf.
+Implementiert in `addon.py::__refresh_all_data()`.
+
+**Ablauf:**
+1. Öffnet `xbmcgui.DialogProgress()` mit Abbrechen-Schaltfläche
+2. Lädt alle VOD-Kategorien + alle Series-Kategorien (je ein API-Call)
+3. Iteriert über jede Kategorie, lädt alle Videos (`max_page_limit=9999` temporär)
+4. Falls TMDB aktiv: ruft `tmdb.get_movie_info()` / `tmdb.get_tv_info()` pro Film auf → befüllt 30-Tage-Cache
+5. `tmdb.flush()` nach jeder Kategorie (1 Disk-Write pro Kategorie statt pro Film)
+6. Fortschrittsbalken zeigt `[Kategorie X/Y] Kategoriename: Filmname`
+7. Abbrechen jederzeit möglich (zwischen Filmen geprüft)
+
+**Primärer Nutzen:** TMDB-Cache vorwärmen. Nach einmaligem Durchlauf lädt jede Kategorie sofort.
+**Ohne TMDB:** Läuft durch, macht aber ohne Cache-Ziel wenig (Stalker-Daten werden nicht gecacht).
+
+**Routing:** `router()` → `elif params['action'] == 'refresh_all': self.__refresh_all_data()`
+**Kein `endOfDirectory`-Call** – RunPlugin-Aktionen benötigen das nicht.
+
+---
+
 ## Bekannte Bugs & Fixes (heute gelöst)
 
 ### 1. `setRating()` TypeError
@@ -199,6 +234,8 @@ plugin.video.stalkervod.tmdb/
 | `tmdb_enabled` | boolean | TMDB-Anreicherung ein/aus |
 | `tmdb_api_key` | string (hidden) | Kostenloser Key von themoviedb.org |
 | `tmdb_language` | string | Sprache für Metadaten, default `de-DE` |
+| `load_all_pages` | boolean | Alle Server-Seiten auf einmal laden (max_page_limit=9999), Standard: false (=2 Seiten) |
+| `refresh_all_data` | action | Button: Alle Kategorien abrufen + TMDB-Cache befüllen, mit Fortschrittsanzeige |
 
 Die `settings.xml` hat **zwei `<section>`-Blöcke** mit der gleichen `id="plugin.video.stalkervod.tmdb"` –
 das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
@@ -207,10 +244,17 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/stalker-vod-kodi-21-8QE5L`
+- Branch: `claude/tmdb-key-pagination-f4wb3`
 - Alle Commits sind gepusht
 - ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.1.zip`
 - Nach dem Merge: `dist/` ZIP bei neuen Versionen aktualisieren (`make package` + `cp build/*.zip dist/`)
+
+### Zuletzt umgesetzte Features
+
+| Feature | Branch | Beschreibung |
+|---|---|---|
+| `load_all_pages` Setting | `claude/tmdb-key-pagination-f4wb3` | Alle Server-Seiten auf einmal laden (TiviMate-Stil) |
+| `refresh_all_data` Button | `claude/tmdb-key-pagination-f4wb3` | TMDB-Cache vorwärmen mit Fortschrittsbalken |
 
 ### Offene Verbesserungs-Ideen (noch nicht umgesetzt)
 
@@ -219,4 +263,4 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 | `fanart`/`votes` weglassen (optional per Setting) | mittel | weniger Kodi-Bandbreite |
 | Timeout für TMDB-Calls kürzen (aktuell 10s → 3s) | klein | hängt nicht 10s bei Offline-TMDB |
 | FSK-Altersfreigaben (zweiter API-Call pro Film nötig) | mittel | verdoppelt Ladezeit bei leerem Cache |
-| Parallele TMDB-Requests (Threading) | groß | deutlich schneller beim ersten Laden |
+| Parallele TMDB-Requests beim Refresh (Threading) | groß | Refresh deutlich schneller (statt sequenziell) |

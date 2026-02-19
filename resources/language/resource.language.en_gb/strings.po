@@ -103,3 +103,11 @@ msgstr "Load all pages at once"
 msgctxt "#32109"
 msgid "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
 msgstr "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
+
+msgctxt "#32110"
+msgid "Refresh all data"
+msgstr "Refresh all data"
+
+msgctxt "#32111"
+msgid "Fetches all VOD and Series categories from the server and pre-fills the TMDB metadata cache. Run once to make all subsequent browsing instant."
+msgstr "Fetches all VOD and Series categories from the server and pre-fills the TMDB metadata cache. Run once to make all subsequent browsing instant."

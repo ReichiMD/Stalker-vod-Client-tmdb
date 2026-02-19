@@ -618,6 +618,67 @@ class StalkerAddon:
 
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=False, cacheToDisc=False)
 
+    @staticmethod
+    def __refresh_all_data():
+        """Pre-fetch all VOD/Series categories and warm the TMDB cache with a progress dialog."""
+        progress = xbmcgui.DialogProgress()
+        progress.create('Stalker VOD', 'Kategorien werden geladen...')
+        try:
+            original_limit = G.addon_config.max_page_limit
+            G.addon_config.max_page_limit = 9999
+
+            vod_cats = []
+            series_cats = []
+            try:
+                vod_cats = Api.get_vod_categories() or []
+            except Exception:
+                pass
+            try:
+                raw = Api.get_series_categories()
+                series_cats = raw if isinstance(raw, list) else []
+            except Exception:
+                pass
+
+            work = [('vod', c) for c in vod_cats] + [('series', c) for c in series_cats]
+            total = len(work)
+            if total == 0:
+                xbmcgui.Dialog().ok('Stalker VOD', 'Keine Kategorien gefunden.')
+                return
+
+            tmdb = _get_tmdb_client()
+            for idx, (cat_type, category) in enumerate(work):
+                if progress.iscanceled():
+                    break
+                pct = int(idx * 100 / total)
+                cat_name = category['title']
+                progress.update(pct, '[{}/{}] {}'.format(idx + 1, total, cat_name))
+                try:
+                    if cat_type == 'vod':
+                        result = Api.get_videos(category['id'], 1, '', 0)
+                    else:
+                        result = Api.get_series(category['id'], 1, '', 0)
+                except Exception:
+                    continue
+                if tmdb:
+                    for video in result.get('data', []):
+                        if progress.iscanceled():
+                            break
+                        progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
+                        year = get_int_value(video, 'year')
+                        year = year if year != 0 else None
+                        if cat_type == 'series' or video.get('series'):
+                            tmdb.get_tv_info(video['name'], year)
+                        else:
+                            tmdb.get_movie_info(video['name'], year)
+                    tmdb.flush()
+
+            G.addon_config.max_page_limit = original_limit
+            if not progress.iscanceled():
+                progress.update(100, 'Aktualisierung abgeschlossen!')
+                xbmc.sleep(1500)
+        finally:
+            progress.close()
+
     def router(self, param_string):
         """Route calls"""
         params = dict(parse_qsl(param_string))
@@ -658,6 +719,8 @@ class StalkerAddon:
                 self.__toggle_favorites(params['video_id'], False, params['_type'])
             elif params['action'] == 'add_fav':
                 self.__toggle_favorites(params['video_id'], True, params['_type'])
+            elif params['action'] == 'refresh_all':
+                self.__refresh_all_data()
             else:
                 raise ValueError('Invalid param string: {}!'.format(param_string))
         else:
