@@ -1032,6 +1032,100 @@ class StalkerAddon:
             '{} von {} Ordnern werden angezeigt.'.format(count_visible, count_total))
 
     @staticmethod
+    def __tmdb_refresh_now():
+        """Fetch TMDB metadata for all films already in the local Stalker cache.
+
+        Does NOT re-download Stalker data – only fills/updates the TMDB cache.
+        Skips films whose TMDB entry is still fresh.
+        """
+        tmdb = _get_tmdb_client()
+        if tmdb is None:
+            xbmcgui.Dialog().ok(
+                'Stalker VOD',
+                'TMDB ist nicht aktiviert oder kein API-Key eingegeben.[CR]'
+                'Bitte TMDB zuerst im TMDB-Tab einrichten.'
+            )
+            return
+
+        stalker_cache = StalkerCache(G.addon_config.token_path)
+        vod_cats = _apply_category_filter(
+            stalker_cache.get_categories('vod') or [],
+            G.get_filter_file_path('vod')
+        )
+        series_cats = _apply_category_filter(
+            stalker_cache.get_categories('series') or [],
+            G.get_filter_file_path('series')
+        )
+        work = [('vod', c) for c in vod_cats] + [('series', c) for c in series_cats]
+        total = len(work)
+
+        if total == 0:
+            xbmcgui.Dialog().ok(
+                'Stalker VOD',
+                'Kein lokaler Stalker-Cache vorhanden.[CR]'
+                'Erst "Alle Daten aktualisieren" im Cache-Tab ausführen.'
+            )
+            return
+
+        progress = xbmcgui.DialogProgress()
+        progress.create('TMDB-Metadaten laden', 'Starte...')
+        try:
+            for idx, (cat_type, category) in enumerate(work):
+                if progress.iscanceled():
+                    break
+                pct = int(idx * 100 / total)
+                cat_name = category['title']
+                progress.update(pct, '[{}/{}] {}'.format(idx + 1, total, cat_name))
+                videos = stalker_cache.get_videos(cat_type, category['id']) or []
+                rate_limit_hit = False
+                for video in videos:
+                    if progress.iscanceled():
+                        break
+                    progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
+                    year = get_int_value(video, 'year')
+                    year = year if year != 0 else None
+                    try:
+                        if cat_type == 'series' or video.get('series'):
+                            tmdb.get_tv_info(video['name'], year)
+                        else:
+                            tmdb.get_movie_info(video['name'], year)
+                    except TmdbRateLimitError:
+                        rate_limit_hit = True
+                        break
+                tmdb.flush()
+                if rate_limit_hit:
+                    progress.close()
+                    xbmcgui.Dialog().ok(
+                        'Stalker VOD – TMDB abgebrochen',
+                        'TMDB hat zu viele Anfragen in Folge blockiert.[CR][CR]'
+                        'Der Download wurde sicherheitshalber gestoppt.[CR]'
+                        'Die bereits geladenen Daten wurden gespeichert.[CR][CR]'
+                        'Bitte warte einige Minuten und versuche es erneut.'
+                    )
+                    return
+            if not progress.iscanceled():
+                progress.update(100, 'TMDB-Metadaten vollständig geladen!')
+                xbmc.sleep(1500)
+        finally:
+            progress.close()
+
+    @staticmethod
+    def __tmdb_clear_cache():
+        """Delete the local TMDB cache file."""
+        cache_path = os.path.join(G.addon_config.token_path, 'tmdb_cache.json')
+        if not xbmcvfs.exists(cache_path):
+            xbmcgui.Dialog().ok('TMDB-Cache', 'Kein Cache vorhanden – nichts zu löschen.')
+            return
+        if xbmcvfs.delete(cache_path):
+            xbmcgui.Dialog().ok(
+                'TMDB-Cache gelöscht',
+                'Der TMDB-Cache wurde gelöscht.[CR]'
+                'Beim nächsten Öffnen eines Ordners werden die Daten neu heruntergeladen.'
+            )
+        else:
+            xbmcgui.Dialog().ok('TMDB-Cache', 'Fehler: Cache konnte nicht gelöscht werden.')
+
+    @staticmethod
     def __show_tmdb_cache_info():
         """Show TMDB cache statistics: entry count, age, expiry, file size."""
         import json
@@ -1151,6 +1245,10 @@ class StalkerAddon:
                 self.__manage_folder_selection(params)
             elif params['action'] == 'tmdb_cache_info':
                 self.__show_tmdb_cache_info()
+            elif params['action'] == 'tmdb_refresh_now':
+                self.__tmdb_refresh_now()
+            elif params['action'] == 'tmdb_clear_cache':
+                self.__tmdb_clear_cache()
             else:
                 raise ValueError('Invalid param string: {}!'.format(param_string))
         else:

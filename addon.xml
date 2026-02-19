@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.7" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.8" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,14 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.1.8  (2026-02-19)
+- New button "Load TMDB metadata now" in the TMDB tab: fetches TMDB data
+  for all films already in the local Stalker cache – without re-downloading
+  Stalker data. Films already in the TMDB cache are skipped. Runs with a
+  cancellable progress dialog. Stops safely on rate-limit errors.
+- New button "Delete TMDB cache" in the TMDB tab: removes all locally
+  stored TMDB metadata. Data is re-fetched the next time a folder is opened.
+
 v0.1.7  (2026-02-19)
 - New setting "Cache validity (days)" in the TMDB tab: configure how long
   TMDB metadata is kept before it is re-downloaded (default: 30 days).

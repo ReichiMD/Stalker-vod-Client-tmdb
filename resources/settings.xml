@@ -189,6 +189,18 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
+
+                <setting id="tmdb_refresh_now" type="boolean" label="32142" help="32143">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+
+                <setting id="tmdb_clear_cache" type="boolean" label="32144" help="32145">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
             </group>
         </category>
     </section>

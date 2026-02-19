@@ -557,7 +557,7 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 - Branch: `claude/tmdb-metadata-strategy-Dc4Wn`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.7.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.8.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -565,6 +565,8 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| TMDB-Metadaten jetzt laden | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_refresh_now` im TMDB-Tab. Lädt TMDB-Daten nur für Filme im Stalker-Cache, ohne Stalker-Daten neu herunterzuladen. Überspringt bereits gecachte Filme. Mit Abbrechen-Knopf und Rate-Limit-Schutz. |
+| TMDB-Cache löschen | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_clear_cache` löscht `tmdb_cache.json`. Daten werden beim nächsten Ordner-Öffnen neu heruntergeladen. |
 | Cache-Gültigkeitsdauer (Tage) | `claude/tmdb-metadata-strategy-Dc4Wn` | Neues Setting `tmdb_cache_days` (Standard: 30). Nutzer kann selbst einstellen wie lange Daten gültig bleiben. `TmdbClient.__init__` akzeptiert `cache_days`-Parameter. |
 | Cache-Info-Dialog | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_show_cache_info` öffnet Dialog mit: Anzahl Einträge, Alter neuester/ältester Eintrag, verbleibende Tage, Dateigröße. Liest direkt aus `tmdb_cache.json`. |
 | TMDB Rate-Limiting | `claude/tmdb-metadata-strategy-Dc4Wn` | Max. 35 Anfragen / 10 Sekunden. Automatische Pause bei Bedarf. `_request_times`-Liste in `TmdbClient`. |
