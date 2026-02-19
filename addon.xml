@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.2" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.5" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,30 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.0.5  (2026-02-19)
+- Fix: "Data management" group was invisible in Kodi settings. Root cause:
+  type="action" with <action>RunPlugin()</action> is not valid in Kodi 21
+  settings format version="1". The refresh trigger is now a boolean toggle
+  that resets itself automatically after the service runs the refresh.
+
+v0.0.4  (2026-02-19)
+- Initial setup wizard: after entering server address and MAC address the
+  addon automatically asks to pre-fetch all VOD data (Yes/No dialog).
+  Runs only once; can be re-triggered via the "Refresh all data" button.
+- German UI: full German translation added (resource.language.de_de).
+  Kodi automatically uses it when the interface language is set to German.
+- Settings: fixed duplicate group/setting label for "Load all pages".
+  The data management group now has its own label ("Datenverwaltung").
+
+v0.0.3  (2026-02-19)
+- New setting "Load all pages at once": fetches all server pages in one
+  listing call instead of paginating (TiviMate-style). Recommended when
+  TMDB is disabled for fast full-category browsing.
+- New button "Refresh all data": pre-fetches every VOD and Series category
+  with a progress dialog. Warms the TMDB cache so all subsequent browsing
+  is instant. Cancellable at any time.
+- TMDB API key is preserved when TMDB is disabled (only greyed out in UI).
+
 v0.0.2  (2026-02-18)
 - Performance: TmdbClient is now a singleton per plugin run – cache file
   is loaded from disk once instead of once per list item.

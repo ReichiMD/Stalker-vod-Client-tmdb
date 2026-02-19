@@ -11,6 +11,96 @@ Erweitert um direkte TMDB-Metadaten-Integration (Poster, Fanart, Plot, Bewertung
 
 ---
 
+## PFLICHT am Sitzungsende – ZIP-Release erstellen
+
+> **WICHTIG:** Nach JEDER Session, in der Code geändert wurde, MUSS vor dem letzten Commit:
+> 1. Die Versionsnummer in `addon.xml` erhöht werden (Patch: z.B. 0.0.3 → 0.0.4)
+> 2. Ein News-Eintrag in `addon.xml` unter `<news>` hinzugefügt werden (Datum + Was wurde geändert)
+> 3. `make package` ausführen → erstellt `build/plugin.video.stalkervod.tmdb-X.X.X.zip`
+> 4. Alte ZIP aus `dist/` löschen, neue ZIP nach `dist/` kopieren
+> 5. `addon.xml` + `dist/*.zip` in denselben Commit aufnehmen
+
+```bash
+# Schritt 3–4 als Einzeiler:
+make package && rm -f dist/*.zip && cp build/plugin.video.stalkervod.tmdb-*.zip dist/
+```
+
+**Warum:** Der Nutzer ist Nicht-Programmierer. Die ZIP in `dist/` ist die einzige Möglichkeit,
+das Addon herunterzuladen und in Kodi zu installieren. Ohne aktuelle ZIP ist die Session wertlos.
+
+---
+
+## ⚠️ KODI 21 (OMEGA) – BEKANNTE EINSCHRÄNKUNGEN & PFLICHT-WISSEN
+
+> **Diese Regeln MÜSSEN in jeder Session beachtet werden, sonst entstehen unsichtbare UI-Elemente.**
+
+### REGEL 1: Kein `type="action"` mit `<action>`-Child in `settings version="1"`
+
+**Problem:** In Kodi 21 (Omega) mit `<settings version="1">` ist das `<action>`-Tag
+als Child von `<setting type="action">` **nicht valide**. Kodi 21 ignoriert es still –
+und wirft dabei die **gesamte `<group>`** weg. Der Nutzer sieht gar nichts.
+
+```xml
+<!-- ❌ FUNKTIONIERT NICHT in Kodi 21 settings version="1" -->
+<setting id="my_button" type="action" label="32001">
+    <action>RunPlugin(plugin://...)</action>   <!-- ← dieser Tag killt die ganze Gruppe -->
+    <control type="button" />
+</setting>
+```
+
+**Workaround – IMMER SO MACHEN:**
+```xml
+<!-- ✅ KORREKT: boolean toggle als Auslöser -->
+<setting id="my_button" type="boolean" label="32001" help="32002">
+    <level>0</level>
+    <default>false</default>
+    <control type="toggle" />
+</setting>
+```
+
+Dazu im Service (`lib/service.py`) in `onSettingsChanged()`:
+```python
+addon = xbmcaddon.Addon()
+if addon.getSetting('my_button') == 'true':
+    addon.setSetting('my_button', 'false')   # sofort zurücksetzen
+    xbmc.executebuiltin('RunPlugin(plugin://...?action=do_something)')
+    return
+```
+
+**Warum funktioniert das?**
+- `type="boolean"` ist vollständig valide in allen Kodi-Versionen.
+- Kodi ruft `onSettingsChanged()` im Service auf, sobald der Nutzer den Schalter umlegt.
+- Der Service setzt den Wert sofort zurück auf `false` (der Schalter springt zurück).
+- Anschließend startet er `RunPlugin(...)` → der gewünschte Effekt tritt ein.
+
+### REGEL 2: Sprachdateien – immer BEIDE Dateien pflegen
+
+Wenn neue String-IDs hinzugefügt werden, **immer in beiden Dateien** eintragen:
+- `resources/language/resource.language.en_gb/strings.po` (Englisch – Fallback)
+- `resources/language/resource.language.de_de/strings.po` (Deutsch – primär für den Nutzer)
+
+Kodi lädt automatisch die passende Sprachdatei. Fehlt ein String, wird das `<group>`-
+oder `<setting>`-Element möglicherweise ausgeblendet (kein Fehler, nur leer/unsichtbar).
+
+### REGEL 3: `onSettingsChanged` wird bei JEDER Einstellungsänderung aufgerufen
+
+Nicht nur bei der Ersteinrichtung oder beim Refresh-Button. Jede Änderung einer beliebigen
+Einstellung feuert diesen Callback. Deshalb ist die **genaue Reihenfolge der Prüfungen** wichtig:
+
+```python
+def onSettingsChanged(self):
+    addon = xbmcaddon.Addon()
+    # 1. Zuerst: Refresh-Button prüfen (spezifisch, kein Server nötig)
+    if addon.getSetting('refresh_all_data') == 'true':
+        addon.setSetting('refresh_all_data', 'false')
+        xbmc.executebuiltin('RunPlugin(...?action=refresh_all)')
+        return   # ← return verhindert, dass der Ersteinrichtungs-Check ebenfalls läuft
+    # 2. Dann: Ersteinrichtungs-Check (nur wenn Server + MAC gesetzt und Flag nicht da)
+    ...
+```
+
+---
+
 ## Architektur-Entscheidungen
 
 ### TMDB: Direkte API, nicht TMDb Helper
@@ -40,7 +130,8 @@ damit TMDb Helper optional eigene Overlays/Details anzeigen kann. Pflicht ist es
 | `lib/api.py` | Stalker Middleware API Client |
 | `lib/auth.py` | Stalker Authentifizierung / Token-Verwaltung |
 | `resources/settings.xml` | Kodi Einstellungen (zwei Sections, gleiche Addon-ID) |
-| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32100–32107 = TMDB) |
+| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32100–32114) – immer parallel in `de_de/strings.po` pflegen! |
+| `resources/language/resource.language.de_de/strings.po` | Deutsche Übersetzung aller Strings – Kodi lädt sie automatisch bei dt. Sprache |
 
 ---
 
@@ -149,6 +240,71 @@ Das würde die Ladezeit für unkachet Filme verdoppeln (~600ms statt ~300ms pro 
 
 ---
 
+## Laden-Strategie & Bulk-Refresh
+
+### "Alle Seiten laden" (`load_all_pages`)
+
+Standardmäßig lädt das Addon `max_page_limit = 2` Server-Seiten pro Kodi-Listing-Seite.
+Mit `load_all_pages = true` wird `max_page_limit = 9999` gesetzt → alle Seiten werden auf einmal abgerufen.
+
+**Wann sinnvoll:**
+- TMDB deaktiviert: kein Metadaten-Overhead, nur Stalker-Daten → gesamte Kategorie in 1–3s
+- TMDB aktiviert: nicht empfohlen (erste Nutzung: jeder Film ~300ms → bei 200 Filmen ~60s)
+
+**Wo gesetzt:** `globals.py::init_globals()` → `self.addon_config.max_page_limit`
+
+### "Daten aktualisieren" Schalter (`refresh_all_data`)
+
+**Kein** `type="action"` – das funktioniert in Kodi 21 nicht (→ Regel 1 oben).
+Stattdessen: `type="boolean"` Toggle. Der Service erkennt `value == 'true'` in
+`onSettingsChanged()`, setzt den Schalter sofort zurück auf `false` und ruft
+`RunPlugin(...?action=refresh_all)` auf.
+Implementiert in `addon.py::__refresh_all_data()` + `lib/service.py::onSettingsChanged()`.
+
+**Ablauf:**
+1. Öffnet `xbmcgui.DialogProgress()` mit Abbrechen-Schaltfläche
+2. Lädt alle VOD-Kategorien + alle Series-Kategorien (je ein API-Call)
+3. Iteriert über jede Kategorie, lädt alle Videos (`max_page_limit=9999` temporär)
+4. Falls TMDB aktiv: ruft `tmdb.get_movie_info()` / `tmdb.get_tv_info()` pro Film auf → befüllt 30-Tage-Cache
+5. `tmdb.flush()` nach jeder Kategorie (1 Disk-Write pro Kategorie statt pro Film)
+6. Fortschrittsbalken zeigt `[Kategorie X/Y] Kategoriename: Filmname`
+7. Abbrechen jederzeit möglich (zwischen Filmen geprüft)
+
+**Primärer Nutzen:** TMDB-Cache vorwärmen. Nach einmaligem Durchlauf lädt jede Kategorie sofort.
+**Ohne TMDB:** Läuft durch, macht aber ohne Cache-Ziel wenig (Stalker-Daten werden nicht gecacht).
+
+**Routing:** `router()` → `elif params['action'] == 'refresh_all': self.__refresh_all_data()`
+**Kein `endOfDirectory`-Call** – RunPlugin-Aktionen benötigen das nicht.
+
+---
+
+## Ersteinrichtungs-Dialog (wie Stalker PVR)
+
+### Ablauf
+1. Nutzer öffnet Einstellungen und gibt Serveradresse + MAC-Adresse ein
+2. Kodi ruft `BackgroundService.onSettingsChanged()` auf (bei jeder Einstellungsänderung)
+3. Wenn **beide Felder** gesetzt sind und die Flag-Datei `initial_setup_done` **nicht** existiert:
+   - Flag-Datei wird sofort erstellt (verhindert mehrfaches Anzeigen)
+   - Ja/Nein-Dialog: "Sollen alle VOD-Daten jetzt geladen werden?"
+   - Bei "Ja": `RunPlugin(...?action=refresh_all)` → startet Bulk-Download mit Fortschrittsbalken
+4. Bei "Nein" oder Abbruch: Button "Alle Daten aktualisieren" in den Einstellungen steht weiterhin bereit
+
+### Flag-Datei
+- Pfad: `{kodi_profile}/plugin.video.stalkervod.tmdb/initial_setup_done` (leere Datei)
+- Existiert diese Datei → Dialog erscheint nie wieder automatisch
+- Manuelle Alternative: Button "Alle Daten aktualisieren" in den Portal-Einstellungen
+
+### Warum onSettingsChanged und nicht onStart?
+`onSettingsChanged` im Service wird von Kodi aufgerufen sobald der Nutzer eine Einstellung
+ändert und bestätigt. Das ist der nächstmögliche Zeitpunkt nach der Eingabe der Anmeldedaten –
+exakt das Verhalten, das Stalker PVR beim ersten Start zeigt.
+
+**Hinweis für zukünftige Sessions:** Wenn der Nutzer den Server wechselt und eine neue
+Ersteinrichtung triggern möchte, muss die Flag-Datei gelöscht werden.
+Dafür könnte ein Reset-Button in den Einstellungen ergänzt werden (noch nicht umgesetzt).
+
+---
+
 ## Bekannte Bugs & Fixes (heute gelöst)
 
 ### 1. `setRating()` TypeError
@@ -199,6 +355,11 @@ plugin.video.stalkervod.tmdb/
 | `tmdb_enabled` | boolean | TMDB-Anreicherung ein/aus |
 | `tmdb_api_key` | string (hidden) | Kostenloser Key von themoviedb.org |
 | `tmdb_language` | string | Sprache für Metadaten, default `de-DE` |
+| `load_all_pages` | boolean | Alle Server-Seiten auf einmal laden (max_page_limit=9999), Standard: false (=2 Seiten) |
+| `refresh_all_data` | **boolean** (kein action!) | Schalter-Workaround: einschalten → Service startet Refresh + setzt Schalter zurück |
+
+> **Wichtig:** `refresh_all_data` ist bewusst `type="boolean"`, obwohl es sich wie ein Button verhält.
+> Hintergrund: `type="action"` mit `<action>`-Child funktioniert in Kodi 21 nicht (→ Regel 1 oben).
 
 Die `settings.xml` hat **zwei `<section>`-Blöcke** mit der gleichen `id="plugin.video.stalkervod.tmdb"` –
 das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
@@ -207,10 +368,21 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/stalker-vod-kodi-21-8QE5L`
+- Branch: `claude/tmdb-key-pagination-f4wb3`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.1.zip`
-- Nach dem Merge: `dist/` ZIP bei neuen Versionen aktualisieren (`make package` + `cp build/*.zip dist/`)
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.5.zip`
+- ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
+
+### Zuletzt umgesetzte Features
+
+| Feature | Branch | Beschreibung |
+|---|---|---|
+| `load_all_pages` Setting | `claude/tmdb-key-pagination-f4wb3` | Alle Server-Seiten auf einmal laden (TiviMate-Stil) |
+| `refresh_all_data` Schalter | `claude/tmdb-key-pagination-f4wb3` | Schalter statt Button – Kodi 21 `version="1"` settings unterstützt `type="action"` mit `<action>`-Child nicht |
+| Ersteinrichtungs-Dialog | `claude/tmdb-key-pagination-f4wb3` | `onSettingsChanged` im Service erkennt erste Anmeldedaten-Eingabe → Ja/Nein-Dialog → startet `refresh_all` |
+| Deutsches UI | `claude/tmdb-key-pagination-f4wb3` | `resource.language.de_de/strings.po` – alle Settings auf Deutsch bei deutschem Kodi |
+
+> **Kodi-21-Einschränkungen:** Siehe Abschnitt "⚠️ KODI 21 – BEKANNTE EINSCHRÄNKUNGEN" ganz oben.
 
 ### Offene Verbesserungs-Ideen (noch nicht umgesetzt)
 
@@ -219,4 +391,4 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 | `fanart`/`votes` weglassen (optional per Setting) | mittel | weniger Kodi-Bandbreite |
 | Timeout für TMDB-Calls kürzen (aktuell 10s → 3s) | klein | hängt nicht 10s bei Offline-TMDB |
 | FSK-Altersfreigaben (zweiter API-Call pro Film nötig) | mittel | verdoppelt Ladezeit bei leerem Cache |
-| Parallele TMDB-Requests (Threading) | groß | deutlich schneller beim ersten Laden |
+| Parallele TMDB-Requests beim Refresh (Threading) | groß | Refresh deutlich schneller (statt sequenziell) |

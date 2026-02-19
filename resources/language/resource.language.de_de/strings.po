@@ -1,19 +1,19 @@
 # Kodi Media Center language file
-# Addon Name: Skin Widgets
-# Addon id: service.skin.widgets
-# Addon Provider: Martijn, phil65
+# Addon Name: Stalker VOD Client + TMDB
+# Addon id: plugin.video.stalkervod.tmdb
+# Addon Provider: ReichiMD
 msgid ""
 msgstr ""
 "Project-Id-Version: Kodi Addons\n"
 "Report-Msgid-Bugs-To: translations@kodi.tv\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Kodi Translation Team\n"
-"Language-Team: English (https://kodi.weblate.cloud/languages/en_gb/)\n"
+"Last-Translator: ReichiMD\n"
+"Language-Team: German (https://kodi.weblate.cloud/languages/de_de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: en\n"
+"Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgctxt "#32001"
@@ -22,7 +22,7 @@ msgstr "Portal"
 
 msgctxt "#32002"
 msgid "Server Address (ex. http://xyz:888/c/ or http://xyz:888/stalker_portal/c/)"
-msgstr "Server Address (ex. http://xyz:888/c/ or http://xyz:888/stalker_portal/c/)"
+msgstr "Serveradresse (z.B. http://xyz:888/c/ oder http://xyz:888/stalker_portal/c/)"
 
 msgctxt "#32003"
 msgid "Server"
@@ -30,96 +30,96 @@ msgstr "Server"
 
 msgctxt "#32004"
 msgid "Server default context path /server/load.php"
-msgstr "Server default context path /server/load.php"
+msgstr "Standard-Kontextpfad /server/load.php"
 
 msgctxt "#32005"
 msgid "Use /portal.php as context path"
-msgstr "Use /portal.php as context path"
+msgstr "/portal.php als Kontextpfad verwenden"
 
 msgctxt "#32006"
 msgid "Client"
-msgstr "Client"
+msgstr "Gerät"
 
 msgctxt "#32007"
 msgid "MAC Address"
-msgstr "MAC Address"
+msgstr "MAC-Adresse"
 
 msgctxt "#32008"
 msgid "Advanced"
-msgstr "Advanced"
+msgstr "Erweitert"
 
 msgctxt "#32009"
 msgid "Serial Number"
-msgstr "Serial Number"
+msgstr "Seriennummer"
 
 msgctxt "#32010"
 msgid "Device ID"
-msgstr "Device ID"
+msgstr "Geräte-ID"
 
 msgctxt "#32011"
 msgid "Device ID 2"
-msgstr "Device ID 2"
+msgstr "Geräte-ID 2"
 
 msgctxt "#32012"
 msgid "Signature"
-msgstr "Signature"
+msgstr "Signatur"
 
 msgctxt "#32100"
 msgid "TMDB Metadata"
-msgstr "TMDB Metadata"
+msgstr "TMDB Metadaten"
 
 msgctxt "#32101"
 msgid "TMDB Settings"
-msgstr "TMDB Settings"
+msgstr "TMDB Einstellungen"
 
 msgctxt "#32102"
 msgid "Enable TMDB Metadata"
-msgstr "Enable TMDB Metadata"
+msgstr "TMDB Metadaten aktivieren"
 
 msgctxt "#32103"
 msgid "Fetch posters, fanart, plot and ratings from The Movie Database"
-msgstr "Fetch posters, fanart, plot and ratings from The Movie Database"
+msgstr "Poster, Fanart, Handlung und Bewertungen von The Movie Database laden"
 
 msgctxt "#32104"
 msgid "TMDB API Key"
-msgstr "TMDB API Key"
+msgstr "TMDB API-Schlüssel"
 
 msgctxt "#32105"
 msgid "Free API key from themoviedb.org (Settings > API)"
-msgstr "Free API key from themoviedb.org (Settings > API)"
+msgstr "Kostenloser API-Schlüssel von themoviedb.org (Einstellungen > API)"
 
 msgctxt "#32106"
 msgid "Language (e.g. de-DE, en-US)"
-msgstr "Language (e.g. de-DE, en-US)"
+msgstr "Sprache (z.B. de-DE, en-US)"
 
 msgctxt "#32107"
 msgid "TMDB metadata language code. Default: de-DE"
-msgstr "TMDB metadata language code. Default: de-DE"
+msgstr "TMDB Sprach-Code für Metadaten. Standard: de-DE"
 
 msgctxt "#32108"
 msgid "Load all pages at once"
-msgstr "Load all pages at once"
+msgstr "Alle Seiten auf einmal laden"
 
 msgctxt "#32109"
 msgid "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
-msgstr "Loads all content in one go (longer initial load). Recommended when TMDB is disabled."
+msgstr "Lädt alle Inhalte auf einmal (längere Erstladezeit). Empfohlen wenn TMDB deaktiviert ist."
 
 msgctxt "#32110"
 msgid "Refresh all data (activate to start)"
-msgstr "Refresh all data (activate to start)"
+msgstr "Alle Daten aktualisieren (einschalten zum Starten)"
 
 msgctxt "#32111"
 msgid "Toggle ON to fetch all VOD and Series categories and pre-fill the TMDB cache. The toggle resets itself automatically when done."
-msgstr "Toggle ON to fetch all VOD and Series categories and pre-fill the TMDB cache. The toggle resets itself automatically when done."
+msgstr "Schalter einschalten um alle VOD- und Serienkategorien zu laden und den TMDB-Cache zu befüllen. Der Schalter setzt sich danach automatisch zurück."
 
 msgctxt "#32112"
 msgid "Data management"
-msgstr "Data management"
+msgstr "Datenverwaltung"
 
 msgctxt "#32113"
 msgid "Initial setup"
-msgstr "Initial setup"
+msgstr "Ersteinrichtung"
 
 msgctxt "#32114"
 msgid "Server address and MAC address detected.[CR]Load all VOD data from the server now?[CR][CR]This may take a few minutes depending on content size.[CR]The process can be cancelled at any time."
-msgstr "Server address and MAC address detected.[CR]Load all VOD data from the server now?[CR][CR]This may take a few minutes depending on content size.[CR]The process can be cancelled at any time."
+msgstr "Server-Adresse und MAC-Adresse erkannt.[CR]Sollen jetzt alle VOD-Daten vom Server geladen werden?[CR][CR]Das kann je nach Inhaltsmenge einige Minuten dauern.[CR]Der Vorgang kann jederzeit abgebrochen werden."
