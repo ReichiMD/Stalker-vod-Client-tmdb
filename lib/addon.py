@@ -129,7 +129,7 @@ def _apply_category_filter(categories, filter_file):
         result = []
         for cat in categories:
             title_lower = cat['title'].lower()
-            if any(kw in title_lower for kw in cfg.keywords):
+            if any(re.search(r'\b' + re.escape(kw) + r'\b', title_lower) for kw in cfg.keywords):
                 result.append(cat)
         return result
 

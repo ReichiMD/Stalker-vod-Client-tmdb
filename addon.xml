@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.0" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.1" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,13 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.1.1  (2026-02-19)
+- Fix: keyword folder filter now uses word-boundary matching instead of
+  plain substring search. Previously the keyword "de" accidentally matched
+  folders like "nl-videoland" (because "de" appears inside "videoland").
+  With word boundaries (\b) "de" only matches as a standalone word, e.g.
+  "DE - Filme" or "de-action", but never inside "videoland".
+
 v0.1.0  (2026-02-19)
 - Improvement: Search no longer asks which group to search in.
   Clicking "VOD SEARCH" (or "SERIES SEARCH") directly opens the
