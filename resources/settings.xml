@@ -83,20 +83,16 @@
     <section id="plugin.video.stalkervod.tmdb">
         <category id="folder_filter" label="32115">
             <group id="filter_mode_group" label="32116">
-                <setting id="folder_filter_mode" type="integer" label="32117" help="32118">
+                <setting id="folder_filter_use_keywords" type="boolean" label="32117" help="32118">
                     <level>0</level>
-                    <default>0</default>
-                    <constraints>
-                        <minimum>0</minimum>
-                        <step>1</step>
-                        <maximum>2</maximum>
-                        <options>
-                            <option label="32119">0</option>
-                            <option label="32120">1</option>
-                            <option label="32121">2</option>
-                        </options>
-                    </constraints>
-                    <control type="spinner" subtype="integer" />
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+
+                <setting id="folder_filter_use_manual" type="boolean" label="32119" help="32120">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
                 </setting>
 
                 <setting id="folder_filter_keywords" type="string" label="32122" help="32123">

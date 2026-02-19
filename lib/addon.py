@@ -108,15 +108,22 @@ def _save_filter_ids(filter_file, id_list):
 def _apply_category_filter(categories, filter_file):
     """Return a filtered copy of categories based on current filter settings.
 
-    mode 0 – off: return all
-    mode 1 – keywords: keep categories whose title contains any keyword
-    mode 2 – manual: keep categories whose id is in the saved selection file
+    Manuelle Auswahl hat Vorrang vor Stichwörtern.
+    Sind beide Schalter aus → alle Kategorien anzeigen.
     """
     cfg = G.filter_config
-    if cfg.mode == 0 or not categories:
+    if not categories:
         return categories
 
-    if cfg.mode == 1:
+    # Manuelle Auswahl hat Vorrang
+    if cfg.use_manual:
+        file_exists, stored_ids = _load_filter_ids(filter_file)
+        if not file_exists:
+            return categories  # noch nicht konfiguriert → alles anzeigen
+        return [c for c in categories if str(c['id']) in stored_ids]
+
+    # Stichwörter-Filter
+    if cfg.use_keywords:
         if not cfg.keywords:
             return categories
         result = []
@@ -126,12 +133,7 @@ def _apply_category_filter(categories, filter_file):
                 result.append(cat)
         return result
 
-    if cfg.mode == 2:
-        file_exists, stored_ids = _load_filter_ids(filter_file)
-        if not file_exists:
-            return categories  # not configured yet → show all
-        return [c for c in categories if str(c['id']) in stored_ids]
-
+    # Beide Schalter aus → alles anzeigen
     return categories
 
 

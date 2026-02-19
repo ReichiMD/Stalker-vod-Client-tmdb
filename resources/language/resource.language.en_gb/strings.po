@@ -133,20 +133,20 @@ msgid "Filter Mode"
 msgstr "Filter Mode"
 
 msgctxt "#32117"
-msgid "Active Mode"
-msgstr "Active Mode"
+msgid "Enable keyword filter"
+msgstr "Enable keyword filter"
 
 msgctxt "#32118"
-msgid "Off: show all folders. Keywords: only show folders whose name contains one of the keywords. Manual: you choose exactly which folders are visible."
-msgstr "Off: show all folders. Keywords: only show folders whose name contains one of the keywords. Manual: you choose exactly which folders are visible."
+msgid "Only show folders whose name contains at least one of the keywords below. Leave both filters off to show all folders."
+msgstr "Only show folders whose name contains at least one of the keywords below. Leave both filters off to show all folders."
 
 msgctxt "#32119"
-msgid "Off – show all folders"
-msgstr "Off – show all folders"
+msgid "Enable manual selection"
+msgstr "Enable manual selection"
 
 msgctxt "#32120"
-msgid "Keywords"
-msgstr "Keywords"
+msgid "Only show folders you have ticked in the selection list (buttons below). Takes priority over the keyword filter when both are on."
+msgstr "Only show folders you have ticked in the selection list (buttons below). Takes priority over the keyword filter when both are on."
 
 msgctxt "#32121"
 msgid "Manual selection"

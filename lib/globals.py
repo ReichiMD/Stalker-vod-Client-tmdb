@@ -48,7 +48,8 @@ class TmdbConfig:
 @dataclasses.dataclass
 class FilterConfig:
     """Folder filter config"""
-    mode: int = 0          # 0=off, 1=keywords, 2=manual
+    use_keywords: bool = False   # Stichwörter-Filter aktiv
+    use_manual: bool = False     # Manuelle Auswahl aktiv (Vorrang vor Stichwörtern)
     keywords: list = dataclasses.field(default_factory=list)
 
 
@@ -100,10 +101,8 @@ class GlobalVariables:
             self.tmdb_config.language = self.__addon.getSetting('tmdb_language') or 'de-DE'
 
             # Init Folder Filter settings
-            try:
-                self.filter_config.mode = int(self.__addon.getSetting('folder_filter_mode') or '0')
-            except (ValueError, TypeError):
-                self.filter_config.mode = 0
+            self.filter_config.use_keywords = self.__addon.getSetting('folder_filter_use_keywords') == 'true'
+            self.filter_config.use_manual = self.__addon.getSetting('folder_filter_use_manual') == 'true'
             kw_raw = self.__addon.getSetting('folder_filter_keywords') or ''
             self.filter_config.keywords = [k.strip().lower() for k in kw_raw.split(',') if k.strip()]
 
