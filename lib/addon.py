@@ -695,6 +695,10 @@ class StalkerAddon:
             except Exception:
                 pass
 
+            # Apply folder filter so only visible folders are refreshed
+            vod_cats = _apply_category_filter(vod_cats, G.get_filter_file_path('vod'))
+            series_cats = _apply_category_filter(series_cats, G.get_filter_file_path('series'))
+
             work = [('vod', c) for c in vod_cats] + [('series', c) for c in series_cats]
             total = len(work)
             if total == 0:

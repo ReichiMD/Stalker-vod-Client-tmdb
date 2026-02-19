@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.6" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.0.7" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,11 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.0.7  (2026-02-19)
+- Fix: "Alle Daten aktualisieren" respects the folder filter now.
+  Only folders that pass the active filter (keywords or manual selection)
+  are refreshed – skipping hidden folders saves significant time.
+
 v0.0.6  (2026-02-19)
 - New: "Ordner-Filter" settings section to hide unwanted folders.
   Three modes: Off (show all), Keywords (show folders whose name contains
