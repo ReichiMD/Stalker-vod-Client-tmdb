@@ -11,6 +11,25 @@ Erweitert um direkte TMDB-Metadaten-Integration (Poster, Fanart, Plot, Bewertung
 
 ---
 
+## PFLICHT am Sitzungsende – ZIP-Release erstellen
+
+> **WICHTIG:** Nach JEDER Session, in der Code geändert wurde, MUSS vor dem letzten Commit:
+> 1. Die Versionsnummer in `addon.xml` erhöht werden (Patch: z.B. 0.0.3 → 0.0.4)
+> 2. Ein News-Eintrag in `addon.xml` unter `<news>` hinzugefügt werden (Datum + Was wurde geändert)
+> 3. `make package` ausführen → erstellt `build/plugin.video.stalkervod.tmdb-X.X.X.zip`
+> 4. Alte ZIP aus `dist/` löschen, neue ZIP nach `dist/` kopieren
+> 5. `addon.xml` + `dist/*.zip` in denselben Commit aufnehmen
+
+```bash
+# Schritt 3–4 als Einzeiler:
+make package && rm -f dist/*.zip && cp build/plugin.video.stalkervod.tmdb-*.zip dist/
+```
+
+**Warum:** Der Nutzer ist Nicht-Programmierer. Die ZIP in `dist/` ist die einzige Möglichkeit,
+das Addon herunterzuladen und in Kodi zu installieren. Ohne aktuelle ZIP ist die Session wertlos.
+
+---
+
 ## Architektur-Entscheidungen
 
 ### TMDB: Direkte API, nicht TMDb Helper
@@ -246,8 +265,8 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 - Branch: `claude/tmdb-key-pagination-f4wb3`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.1.zip`
-- Nach dem Merge: `dist/` ZIP bei neuen Versionen aktualisieren (`make package` + `cp build/*.zip dist/`)
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.0.3.zip`
+- ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 
 ### Zuletzt umgesetzte Features
 
