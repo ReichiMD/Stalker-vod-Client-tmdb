@@ -16,18 +16,26 @@ def ask_for_input(category):
         type=xbmcgui.INPUT_ALPHANUM) or None
 
 
-def ask_for_category_selection(categories, content_type):
-    """Category selection dialog box"""
+def ask_for_category_selection(categories, content_type, all_label='Alle Kategorien'):
+    """Category selection dialog box.
+
+    Zeigt 'Alle Kategorien' als erste Option an (automatisch vorgewählt durch
+    Listenposition). Gibt {'id': '*', 'title': all_label} zurück wenn 'Alle'
+    gewählt wurde, sonst die gewählte Kategorie, oder None bei Abbruch.
+    """
     if not categories:
         return None
 
-    category_titles = [category['title'] for category in categories]
+    all_sentinel = {'id': '*', 'title': all_label}
+    display_list = [all_label] + [category['title'] for category in categories]
     dialog = xbmcgui.Dialog()
-    selected_index = dialog.select(f'Select {content_type}', category_titles)
+    selected_index = dialog.select(f'Select {content_type}', display_list)
 
-    if selected_index >= 0:
-        return categories[selected_index]
-    return None
+    if selected_index < 0:
+        return None
+    if selected_index == 0:
+        return all_sentinel
+    return categories[selected_index - 1]
 
 
 def get_int_value(dictionary, key):
