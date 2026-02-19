@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.1" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.2" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,17 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.1.2  (2026-02-19)
+- New: Local Stalker data cache (24 h). Category lists and all video
+  lists per folder are now saved to disk after the first load.
+  Opening a folder for the second time is instant (no server request).
+- New: Daily auto-refresh on Kodi start. The background service checks
+  if the cache is older than 24 hours and silently refreshes it in the
+  background – no dialog, no interruption.
+- Improvement: "Alle Daten aktualisieren" now saves Stalker video lists
+  to the local cache even when TMDB is disabled. The refresh is no
+  longer a no-op without TMDB.
+
 v0.1.1  (2026-02-19)
 - Fix: keyword folder filter now uses word-boundary matching instead of
   plain substring search. Previously the keyword "de" accidentally matched

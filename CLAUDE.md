@@ -452,9 +452,9 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/fix-vod-folder-issue-bUQtt`
+- Branch: `claude/optimize-data-refresh-S8crk`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.1.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.2.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -462,6 +462,10 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Lokaler Stalker-Cache | `claude/optimize-data-refresh-S8crk` | `lib/stalker_cache.py` – Kategorien + Videolisten werden 24h lokal gecacht (je eine JSON-Datei pro Kategorie). Öffnen eines Ordners beim 2. Mal ist sofort (<1s). |
+| Täglicher Hintergrund-Refresh | `claude/optimize-data-refresh-S8crk` | Service prüft beim Kodi-Start ob Cache älter als 24h ist → startet `refresh_all&silent=1` lautlos im Hintergrund. |
+| Refresh speichert Stalker-Daten | `claude/optimize-data-refresh-S8crk` | `refresh_all` ist jetzt auch ohne TMDB sinnvoll: speichert alle Videolisten in den lokalen Cache. |
+| Silent-Modus für Refresh | `claude/optimize-data-refresh-S8crk` | `?action=refresh_all&silent=1` – kein Fortschrittsdialog, für Hintergrundnutzung. |
 | Stichwort-Filter Wortgrenze-Fix | `claude/fix-vod-folder-issue-bUQtt` | `"de"` matchte als Teilstring auch `"nl-videoland"` → jetzt `\b`-Wortgrenzen per Regex |
 | Such-Filter fix | `claude/fix-vod-search-filtering-Fk1Ti` | Suche direkt ohne Gruppenauswahl-Dialog – immer alle sichtbaren Gruppen |
 | Gruppen-Filter in Suche | `claude/fix-vod-search-filtering-Fk1Ti` | Such-Dialog zeigte vorher ausgeblendete Gruppen an – jetzt gefiltert |
@@ -476,6 +480,7 @@ das ist in Kodi valide, die Sections sind visuelle Gruppierungen.
 
 | Idee | Aufwand | Effekt |
 |---|---|---|
+| Auth-Singleton (wie TMDB-Singleton) | klein | token.json wird aktuell pro API-Call neu gelesen – einmal pro Prozess reicht |
 | `fanart`/`votes` weglassen (optional per Setting) | mittel | weniger Kodi-Bandbreite |
 | Timeout für TMDB-Calls kürzen (aktuell 10s → 3s) | klein | hängt nicht 10s bei Offline-TMDB |
 | FSK-Altersfreigaben (zweiter API-Call pro Film nötig) | mittel | verdoppelt Ladezeit bei leerem Cache |

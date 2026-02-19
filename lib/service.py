@@ -25,12 +25,35 @@ class BackgroundService(Monitor):
         """ Background loop for maintenance tasks """
         Logger.debug('Service started')
 
+        # Give Kodi a few seconds to fully initialize before background tasks
+        if self.waitForAbort(5):
+            return
+
+        self._check_daily_cache_refresh()
+
         while not self.abortRequested():
             # Stop when abort requested
             if self.waitForAbort(10):
                 break
 
         Logger.debug('Service stopped')
+
+    def _check_daily_cache_refresh(self):
+        """Trigger a silent background refresh if the Stalker data cache is stale (> 24 h)."""
+        addon = xbmcaddon.Addon()
+        server = addon.getSetting('server_address')
+        mac = addon.getSetting('mac_address')
+        if not server or not mac:
+            return  # Not configured yet – nothing to refresh
+
+        profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+        from .stalker_cache import StalkerCache
+        cache = StalkerCache(profile)
+        if cache.categories_are_stale('vod'):
+            Logger.debug('Stalker cache stale – triggering silent background refresh')
+            xbmc.executebuiltin(
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all&silent=1)'
+            )
 
     def onSettingsChanged(self):  # pylint: disable=invalid-name
         """React to setting changes:
