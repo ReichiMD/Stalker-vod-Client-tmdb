@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.0" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.1" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,14 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.1  (2026-02-20)
+- Fix: TMDB-Negativcache-Bug behoben. Filme die auf TMDB nicht gefunden werden,
+  wurden trotz Cache-Eintrag bei jedem Ordner-Öffnen erneut live abgefragt.
+  Ursache: __from_cache() gab None zurück (wie bei Cache-Miss), obwohl der
+  "nicht gefunden"-Eintrag korrekt gespeichert war. Fix: Sentinel-Objekt
+  _CACHE_MISS unterscheidet jetzt "nicht im Cache" von "gecacht, aber kein Treffer".
+  Ergebnis: 3. Ordner-Öffnen ist jetzt genauso schnell wie 2. (alle Ergebnisse gecacht).
+
 v0.2.0  (2026-02-20)
 - Fix: Einstellungsänderungen werden jetzt sofort wirksam ohne Kodi-Neustart.
   Ursache: Da reuselanguageinvoker=true aktiv ist, wurde der Python-Prozess
