@@ -569,9 +569,9 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/fix-settings-reload-786Qf`
+- Branch: `claude/tmdb-cache-performance-Jb0xr`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.0.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.1.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -579,6 +579,7 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| TMDB-Negativcache-Bug-Fix | `claude/tmdb-cache-performance-Jb0xr` | Filme ohne TMDB-Treffer wurden trotz Cache-Eintrag bei jedem Ordner-Öffnen erneut live abgefragt. Sentinel-Objekt `_CACHE_MISS` unterscheidet jetzt "nicht im Cache" von "gecacht, kein Treffer". 3. Öffnen ist jetzt genauso schnell wie 2. |
 | Settings-Reload-Fix | `claude/fix-settings-reload-786Qf` | Alle getSetting()-Aufrufe werden jetzt bei jeder Navigation neu ausgeführt (nicht nur beim ersten Prozessstart). Betrifft TMDB, Filter, Portal, Cache. TMDB-Singleton wird ebenfalls zurückgesetzt. |
 | Auswahl: welche Infos anzeigen | `claude/tmdb-metadata-strategy-Dc4Wn` | Neue Gruppe "What to show" im TMDB-Tab mit 5 Toggles: Poster, Fanart, Plot, Rating, Genre. Alle standardmäßig aktiv. `TmdbConfig` hat 5 neue `use_*`-Felder; `_apply_tmdb_to_item()` wertet sie aus. |
 | TMDB-Metadaten jetzt laden | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_refresh_now` im TMDB-Tab. Lädt TMDB-Daten nur für Filme im Stalker-Cache, ohne Stalker-Daten neu herunterzuladen. Überspringt bereits gecachte Filme. Mit Abbrechen-Knopf und Rate-Limit-Schutz. |

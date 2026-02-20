@@ -23,6 +23,10 @@ CACHE_EXPIRY_DAYS = 30
 _GENRE_KEY_MOVIE = '__genres_movie__'
 _GENRE_KEY_TV = '__genres_tv__'
 
+# Sentinel: returned by __from_cache() when the key is not in the cache at all.
+# This distinguishes "not found" from "found but TMDB had no result" (None).
+_CACHE_MISS = object()
+
 
 class TmdbRateLimitError(Exception):
     """Raised when TMDB returns HTTP 429 too many times in a row.
@@ -78,8 +82,8 @@ class TmdbClient:
         self.__ensure_cache_path()
         cache_key = self.__make_key(title, year, 'movie')
         cached = self.__from_cache(cache_key)
-        if cached is not None:
-            return cached
+        if cached is not _CACHE_MISS:
+            return cached  # None = negative cache (TMDB had no result), dict = found
         result = self.__search_movie(title, year)
         self.__to_cache(cache_key, result)
         return result
@@ -95,8 +99,8 @@ class TmdbClient:
         self.__ensure_cache_path()
         cache_key = self.__make_key(title, year, 'tv')
         cached = self.__from_cache(cache_key)
-        if cached is not None:
-            return cached
+        if cached is not _CACHE_MISS:
+            return cached  # None = negative cache (TMDB had no result), dict = found
         result = self.__search_tv(title, year)
         self.__to_cache(cache_key, result)
         return result
@@ -112,8 +116,8 @@ class TmdbClient:
         self.__ensure_cache_path()
         cache_key = _GENRE_KEY_MOVIE if media_type == 'movie' else _GENRE_KEY_TV
         cached = self.__from_cache(cache_key)
-        if cached is not None:
-            return cached
+        if cached is not _CACHE_MISS:
+            return cached if cached is not None else {}
         endpoint = '{}/genre/{}/list'.format(TMDB_API_BASE, media_type)
         params = {'api_key': self.__api_key, 'language': self.__language}
         response = self.__get(endpoint, params)
@@ -281,13 +285,18 @@ class TmdbClient:
         return '{}:{}:{}'.format(media_type, title.lower().strip(), str(year) if year else '')
 
     def __from_cache(self, key):
-        """Return cached data if still fresh, else None"""
+        """Return cached data if still fresh, else _CACHE_MISS.
+
+        Returns _CACHE_MISS when the key is not in the cache or has expired.
+        Returns None when the key IS in the cache but TMDB found no result
+        (negative cache) – callers must not trigger a new API call in that case.
+        """
         entry = self.__cache.get(key)
         if entry is None:
-            return None
+            return _CACHE_MISS
         age_days = (time.time() - entry.get('ts', 0)) / 86400.0
         if age_days >= self.__cache_days:
-            return None
+            return _CACHE_MISS
         return entry.get('data')  # may itself be None (negative cache)
 
     def flush(self):
