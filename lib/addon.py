@@ -1262,6 +1262,11 @@ class StalkerAddon:
 
 def run(argv):
     """Run"""
+    global _tmdb_client_singleton, _rate_limit_notified
+    # Reset per-run state so that setting changes take effect immediately
+    # without requiring a Kodi restart.
+    _tmdb_client_singleton = None
+    _rate_limit_notified = False
     G.init_globals()
     stalker_addon = StalkerAddon()
     stalker_addon.router(argv[2][1:])
