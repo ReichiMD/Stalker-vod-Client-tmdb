@@ -36,6 +36,7 @@ class AddOnConfig:
     max_retries: int = 3
     token_path: str = None
     cache_enabled: bool = True
+    stalker_cache_days: int = 1
 
 
 @dataclasses.dataclass
@@ -108,6 +109,12 @@ class GlobalVariables:
         self.addon_config.max_page_limit = 9999 if load_all_pages else 2
         # cache_enabled defaults to true; only false when explicitly set to 'false'
         self.addon_config.cache_enabled = self.__addon.getSetting('cache_enabled') != 'false'
+        # stalker_cache_days: 0 = never expire, default 1 (24h)
+        try:
+            stalker_days = int(self.__addon.getSetting('stalker_cache_days') or '1')
+            self.addon_config.stalker_cache_days = stalker_days if stalker_days >= 0 else 1
+        except (ValueError, TypeError):
+            self.addon_config.stalker_cache_days = 1
 
         # Init Portal settings
         self.portal_config.mac_cookie = 'mac=' + self.__addon.getSetting('mac_address')
