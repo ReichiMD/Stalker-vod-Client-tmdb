@@ -17,8 +17,8 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgctxt "#32001"
-msgid "Portal"
-msgstr "Portal"
+msgid "Portal Login"
+msgstr "Portal Login"
 
 msgctxt "#32002"
 msgid "Server Address (ex. http://xyz:888/c/ or http://xyz:888/stalker_portal/c/)"
@@ -113,8 +113,8 @@ msgid "Fetches all VOD and Series categories from the server and pre-fills the T
 msgstr "Fetches all VOD and Series categories from the server and pre-fills the TMDB cache. May take a few minutes. Can be cancelled at any time."
 
 msgctxt "#32112"
-msgid "Data management"
-msgstr "Data management"
+msgid "Data refresh"
+msgstr "Data refresh"
 
 msgctxt "#32113"
 msgid "Initial setup"
@@ -125,12 +125,12 @@ msgid "Server address and MAC address detected.[CR]Load all VOD data from the se
 msgstr "Server address and MAC address detected.[CR]Load all VOD data from the server now?[CR][CR]This may take a few minutes depending on content size.[CR]The process can be cancelled at any time."
 
 msgctxt "#32115"
-msgid "Folder Filter"
-msgstr "Folder Filter"
+msgid "Portal Settings"
+msgstr "Portal Settings"
 
 msgctxt "#32116"
-msgid "Filter Mode"
-msgstr "Filter Mode"
+msgid "Folder filter"
+msgstr "Folder filter"
 
 msgctxt "#32117"
 msgid "Enable keyword filter"
@@ -193,8 +193,8 @@ msgid "Cache"
 msgstr "Cache"
 
 msgctxt "#32132"
-msgid "Cache settings"
-msgstr "Cache settings"
+msgid "Data loading"
+msgstr "Data loading"
 
 msgctxt "#32133"
 msgid "Use local cache"
@@ -339,3 +339,23 @@ msgstr "Polski (pl-PL)"
 msgctxt "#32168"
 msgid "Türkçe (tr-TR)"
 msgstr "Türkçe (tr-TR)"
+
+msgctxt "#32170"
+msgid "Filter mode"
+msgstr "Filter mode"
+
+msgctxt "#32171"
+msgid "Choose how folders are filtered. 'Show all' = no filtering. 'Keyword filter' = only folders matching your keywords. 'Manual selection' = only hand-picked folders."
+msgstr "Choose how folders are filtered. 'Show all' = no filtering. 'Keyword filter' = only folders matching your keywords. 'Manual selection' = only hand-picked folders."
+
+msgctxt "#32172"
+msgid "Show all folders"
+msgstr "Show all folders"
+
+msgctxt "#32173"
+msgid "Keyword filter"
+msgstr "Keyword filter"
+
+msgctxt "#32174"
+msgid "Manual selection"
+msgstr "Manual selection"
