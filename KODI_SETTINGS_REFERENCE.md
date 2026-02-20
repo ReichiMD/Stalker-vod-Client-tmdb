@@ -335,7 +335,7 @@ msgstr "Deutscher Text"
 Fehlt ein String in `de_de/strings.po` → Kodi zeigt nichts (leeres Element, kein Fehler).
 Fehlt ein String in `en_gb/strings.po` → kein Fallback → Element unsichtbar.
 
-**Nächste freie String-ID:** aktuell #32183 (IDs 32001–32182 sind vergeben)
+**Nächste freie String-ID:** aktuell #32188 (IDs 32001–32187 sind vergeben)
 
 ---
 

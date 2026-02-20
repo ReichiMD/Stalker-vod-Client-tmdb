@@ -391,3 +391,23 @@ msgstr "Extended data (2nd request per film)"
 msgctxt "#32182"
 msgid "Extended data requires an additional API request per film, which doubles the loading time during synchronization. Options will be available in a future version (e.g. FSK age ratings)."
 msgstr "Extended data requires an additional API request per film, which doubles the loading time during synchronization. Options will be available in a future version (e.g. FSK age ratings)."
+
+msgctxt "#32183"
+msgid "Portal Cache"
+msgstr "Portal Cache"
+
+msgctxt "#32184"
+msgid "Show portal cache info"
+msgstr "Show portal cache info"
+
+msgctxt "#32185"
+msgid "Shows number of cached categories and films, total cache size and age of the oldest and newest entry."
+msgstr "Shows number of cached categories and films, total cache size and age of the oldest and newest entry."
+
+msgctxt "#32186"
+msgid "Delete portal cache"
+msgstr "Delete portal cache"
+
+msgctxt "#32187"
+msgid "Deletes all locally cached portal data (categories and film lists). Data will be re-loaded from the server the next time you open a folder."
+msgstr "Deletes all locally cached portal data (categories and film lists). Data will be re-loaded from the server the next time you open a folder."

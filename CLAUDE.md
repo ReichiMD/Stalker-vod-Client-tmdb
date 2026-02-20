@@ -383,30 +383,21 @@ Beispiel: Genre=Action + Jahr=2020-2029 + Rating=7+ → zeigt nur gute aktuelle 
 
 ---
 
-## Ersteinrichtungs-Dialog (wie Stalker PVR)
+## Ersteinrichtungs-Dialog – DEAKTIVIERT (v0.2.9)
 
-### Ablauf
-1. Nutzer öffnet Einstellungen und gibt Serveradresse + MAC-Adresse ein
-2. Kodi ruft `BackgroundService.onSettingsChanged()` auf (bei jeder Einstellungsänderung)
-3. Wenn **beide Felder** gesetzt sind und die Flag-Datei `initial_setup_done` **nicht** existiert:
-   - Flag-Datei wird sofort erstellt (verhindert mehrfaches Anzeigen)
-   - Ja/Nein-Dialog: "Sollen alle VOD-Daten jetzt geladen werden?"
-   - Bei "Ja": `RunPlugin(...?action=refresh_all)` → startet Bulk-Download mit Fortschrittsbalken
-4. Bei "Nein" oder Abbruch: Button "Alle Daten aktualisieren" in den Einstellungen steht weiterhin bereit
+**Status:** Der automatische Ersteinrichtungs-Dialog wurde in v0.2.9 deaktiviert.
 
-### Flag-Datei
-- Pfad: `{kodi_profile}/plugin.video.stalkervod.tmdb/initial_setup_done` (leere Datei)
-- Existiert diese Datei → Dialog erscheint nie wieder automatisch
-- Manuelle Alternative: Button "Alle Daten aktualisieren" in den Portal-Einstellungen
+**Grund:** Es macht keinen Sinn, sofort alle Daten vom Portal zu laden, bevor der Nutzer
+die Ordner-Filter konfiguriert hat. Es sind zu viele Daten und das dauert unnötig lange.
 
-### Warum onSettingsChanged und nicht onStart?
-`onSettingsChanged` im Service wird von Kodi aufgerufen sobald der Nutzer eine Einstellung
-ändert und bestätigt. Das ist der nächstmögliche Zeitpunkt nach der Eingabe der Anmeldedaten –
-exakt das Verhalten, das Stalker PVR beim ersten Start zeigt.
+**Stattdessen:** Der Nutzer soll:
+1. Server + MAC-Adresse eingeben
+2. Ordner-Filter konfigurieren (Portal Einstellung → Ordner-Filter)
+3. Manuell "Alle Daten aktualisieren" klicken (Portal Einstellung → Daten aktualisieren)
 
-**Hinweis für zukünftige Sessions:** Wenn der Nutzer den Server wechselt und eine neue
-Ersteinrichtung triggern möchte, muss die Flag-Datei gelöscht werden.
-Dafür könnte ein Reset-Button in den Einstellungen ergänzt werden (noch nicht umgesetzt).
+Die Flag-Datei `initial_setup_done` wird nicht mehr erstellt oder geprüft.
+Der tägliche Hintergrund-Refresh (`_check_daily_cache_refresh`) bleibt aktiv und
+erneuert den Cache automatisch nach 24h (respektiert Ordner-Filter).
 
 ---
 
@@ -530,6 +521,13 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 | `refresh_all_data` | action | Alles löschen + komplett neu laden |
 | `update_new_data` | action | Nur neue Inhalte zum Cache hinzufügen |
 
+**Gruppe: Portal-Cache**
+
+| Setting-ID | Typ | Bedeutung |
+|---|---|---|
+| `stalker_show_cache_info` | action | Cache-Statistiken anzeigen (Kategorien, Filme, Größe, Alter) |
+| `stalker_clear_cache` | action | Portal-Cache komplett löschen (mit Bestätigungsdialog) |
+
 ### Tab 3: TMDB
 | Setting-ID | Typ | Bedeutung |
 |---|---|---|
@@ -545,9 +543,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/brainstorm-filter-options-fSBXE`
+- Branch: `claude/disable-auto-fetch-startup-rrG00`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.8.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.9.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -555,6 +553,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Auto-Fetch Erststart deaktiviert | `claude/disable-auto-fetch-startup-rrG00` | Automatischer Datenabruf beim ersten Start entfernt. Nutzer soll zuerst Ordner-Filter konfigurieren. |
+| Portal-Cache-Verwaltung | `claude/disable-auto-fetch-startup-rrG00` | Neue Gruppe "Portal-Cache" in Portal Einstellung mit Buttons "Cache-Info anzeigen" und "Portal-Cache löschen" (analog TMDB-Cache). |
+| Bildschirmschoner-Schutz | `claude/disable-auto-fetch-startup-rrG00` | InhibitScreensaver(true) während Refresh/Update-Operationen. Verhindert Abbruch durch Nvidia Shield Bildschirmschoner. |
 | VOD/Series-Filter | `claude/brainstorm-filter-options-fSBXE` | Neuer "FILTER"-Button in der VOD/Series-Ordneransicht (neben SEARCH). Filtert nach Genre (Multiselect), Jahr/Dekade oder Mindestbewertung. Kombinationsfilter: Genre + Jahr + Bewertung gleichzeitig mit UND-Logik. Arbeitet nur mit TMDB-Cache-Daten (0 Extra-API-Calls). TMDB-Settings umstrukturiert in "Basis-Daten (1 Abruf)" und "Erweiterte Daten (2. Abruf)" als Vorbereitung für FSK. |
 | Sprachkürzel entfernen | `claude/remove-language-suffix-wWT0N` | Entfernt Sprachkürzel wie "de - " (Präfix) und "(DE)" (Suffix) aus Ordner- und Filmnamen. Standardmäßig aktiv. Konfigurierbar per Setting: Toggle + Freitextfeld für Keywords. Verbessert auch TMDB-Trefferquote (sucht "Hulk" statt "Hulk (DE)"). |
 | Tab-Umbau: 4→3 Tabs | `claude/analyze-tmdb-settings-Jzezc` | "Portal" → "Portal Login", "Ordner-Filter" → "Portal Einstellung", Cache-Tab aufgelöst und in Portal Einstellung integriert. 3 Gruppen: Ordner-Filter, Daten laden, Daten aktualisieren. |
@@ -779,8 +780,8 @@ Dialog 4: Rating-Auswahl
 | Cache-Only-Lookup | `lib/tmdb.py` `get_cached_movie_info()` / `get_cached_tv_info()` | Fertig |
 | Settings: "Basis-Daten" Gruppe | `resources/settings.xml` group `tmdb_fields_group` | Fertig |
 | Settings: "Erweiterte Daten" Gruppe | `resources/settings.xml` group `tmdb_extended_group` | Leer (nur Info-Text) |
-| String-IDs bis 32182 | `strings.po` (en + de) | Belegt |
-| Nächste freie String-ID | 32183 | Reserviert für FSK-Toggle (Phase 2) |
+| String-IDs bis 32187 | `strings.po` (en + de) | Belegt |
+| Nächste freie String-ID | 32188 | Frei (32183–32187 = Portal-Cache) |
 | `TmdbConfig.use_certification` | `lib/globals.py` | Noch nicht angelegt |
 | TMDB Detail-API-Call | `lib/tmdb.py` | Noch nicht implementiert |
 | FSK im Filter-Dialog | `lib/addon.py` | Noch nicht implementiert |

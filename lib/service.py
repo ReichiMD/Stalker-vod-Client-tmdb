@@ -3,11 +3,9 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-import os
 from urllib.parse import urlsplit, parse_qsl, urlencode
 import xbmc
 import xbmcaddon
-import xbmcgui
 import xbmcvfs
 from xbmc import Monitor, Player, getInfoLabel
 from .loggers import Logger
@@ -59,32 +57,13 @@ class BackgroundService(Monitor):
             )
 
     def onSettingsChanged(self):  # pylint: disable=invalid-name
-        """React to setting changes – first-time setup wizard only.
+        """React to setting changes.
         Action buttons (refresh, update, TMDB, folder filter) are now real
         type="action" buttons in settings.xml and execute directly via RunPlugin.
+        No automatic data fetch on first setup – the user should configure
+        folder filters first before loading data.
         """
-        addon = xbmcaddon.Addon()
-
-        # --- First-time setup wizard ---
-        server = addon.getSetting('server_address')
-        mac = addon.getSetting('mac_address')
-        if not server or not mac:
-            return
-
-        profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
-        flag_file = os.path.join(profile, 'initial_setup_done')
-        if xbmcvfs.exists(flag_file):
-            return
-
-        # Mark as done before asking so repeated setting changes don't re-trigger
-        handle = xbmcvfs.File(flag_file, 'w')
-        handle.close()
-
-        if xbmcgui.Dialog().yesno(
-                addon.getLocalizedString(32113),
-                addon.getLocalizedString(32114)):
-            xbmc.executebuiltin(
-                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)')
+        pass
 
 
 class PlayerMonitor(Player):

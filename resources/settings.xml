@@ -201,6 +201,26 @@
                     <control type="button" format="action" />
                 </setting>
             </group>
+
+            <group id="portal_cache_group" label="32183">
+                <setting id="stalker_show_cache_info" type="action" label="32184" help="32185">
+                    <level>0</level>
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=stalker_cache_info)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
+                </setting>
+
+                <setting id="stalker_clear_cache" type="action" label="32186" help="32187">
+                    <level>0</level>
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=stalker_clear_cache)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
+                </setting>
+            </group>
         </category>
     </section>
 

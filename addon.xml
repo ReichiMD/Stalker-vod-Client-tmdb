@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.8" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.9" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,23 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.9  (2026-02-20)
+- Removed: Automatic data fetch on first startup is now disabled. The user
+  should configure folder filters first before loading data. The "Refresh
+  all data" button in settings is still available for manual loading.
+- New: "Portal Cache" group in Portal Settings with two buttons:
+  "Show portal cache info" (shows categories, films, files, size, age)
+  and "Delete portal cache" (removes all cached portal data with
+  confirmation dialog).
+- Fix: Screensaver no longer interrupts data refresh operations.
+  InhibitScreensaver is enabled during "Refresh all data", "Add new
+  content only" and "Update TMDB metadata". This prevents the Nvidia
+  Shield (and other devices) from activating the screensaver and
+  potentially killing the refresh process.
+- Note: Data IS written to the cache incrementally (per category), not
+  only at the end. If a refresh is interrupted, all previously completed
+  categories are saved.
+
 v0.2.8  (2026-02-20)
 - New: "VOD FILTER" and "SERIES FILTER" buttons in the folder view.
   Filter films by Genre, Year/Decade, or Rating – all from TMDB cache

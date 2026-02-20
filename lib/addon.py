@@ -844,6 +844,8 @@ class StalkerAddon:
         silent=True: no progress dialog, runs as background task (triggered
         by the daily service check on Kodi start).
         """
+        # Prevent screensaver from interrupting the refresh (e.g. Nvidia Shield)
+        xbmc.executebuiltin('InhibitScreensaver(true)')
         stalker_cache = StalkerCache(G.addon_config.token_path)
         progress = None
         if not silent:
@@ -936,6 +938,7 @@ class StalkerAddon:
                 progress.update(100, 'Aktualisierung abgeschlossen!')
                 xbmc.sleep(1500)
         finally:
+            xbmc.executebuiltin('InhibitScreensaver(false)')
             if not silent and progress:
                 progress.close()
 
@@ -947,6 +950,8 @@ class StalkerAddon:
         TMDB metadata is only fetched for genuinely new films.
         If TMDB is disabled or no key is set, the TMDB step is simply skipped.
         """
+        # Prevent screensaver from interrupting the update (e.g. Nvidia Shield)
+        xbmc.executebuiltin('InhibitScreensaver(true)')
         stalker_cache = StalkerCache(G.addon_config.token_path)
         progress = xbmcgui.DialogProgress()
         progress.create('Stalker VOD', 'Kategorien werden geladen...')
@@ -1040,6 +1045,7 @@ class StalkerAddon:
                 progress.update(100, '{} neue Inhalte hinzugefügt.'.format(total_new))
                 xbmc.sleep(1500)
         finally:
+            xbmc.executebuiltin('InhibitScreensaver(false)')
             progress.close()
 
     @staticmethod
@@ -1126,6 +1132,8 @@ class StalkerAddon:
             )
             return
 
+        # Prevent screensaver from interrupting the TMDB refresh
+        xbmc.executebuiltin('InhibitScreensaver(true)')
         progress = xbmcgui.DialogProgress()
         progress.create('TMDB-Metadaten laden', 'Starte...')
         try:
@@ -1167,6 +1175,7 @@ class StalkerAddon:
                 progress.update(100, 'TMDB-Metadaten vollständig geladen!')
                 xbmc.sleep(1500)
         finally:
+            xbmc.executebuiltin('InhibitScreensaver(false)')
             progress.close()
 
     @staticmethod
@@ -1192,6 +1201,133 @@ class StalkerAddon:
             )
         else:
             xbmcgui.Dialog().ok('TMDB-Cache', 'Fehler: Cache konnte nicht gelöscht werden.')
+
+    # ------------------------------------------------------------------
+    # Stalker Portal Cache Management
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def __stalker_cache_info():
+        """Show Stalker portal cache statistics: number of files, total size, age."""
+        cache_dir = G.addon_config.token_path
+        if not cache_dir:
+            xbmcgui.Dialog().ok('Portal-Cache Info', 'Kein Cache-Verzeichnis konfiguriert.')
+            return
+
+        import glob as globmod
+        pattern = os.path.join(cache_dir, 'stalker_*.json')
+        cache_files = globmod.glob(pattern)
+
+        if not cache_files:
+            xbmcgui.Dialog().ok(
+                'Portal-Cache Info',
+                'Kein Portal-Cache vorhanden.[CR]'
+                'Erst "Alle Daten aktualisieren" ausführen.'
+            )
+            return
+
+        total_size = 0
+        oldest_ts = None
+        newest_ts = None
+        cat_count = 0
+        video_count = 0
+
+        for fp in cache_files:
+            try:
+                stat = xbmcvfs.Stat(fp)
+                total_size += stat.st_size()
+            except Exception:
+                pass
+
+            try:
+                with xbmcvfs.File(fp, 'r') as fh:
+                    content = fh.read()
+                if content:
+                    data = json.loads(content)
+                    ts = data.get('ts', 0)
+                    if ts > 0:
+                        if oldest_ts is None or ts < oldest_ts:
+                            oldest_ts = ts
+                        if newest_ts is None or ts > newest_ts:
+                            newest_ts = ts
+                    fname = os.path.basename(fp)
+                    if fname.startswith('stalker_cats_'):
+                        cat_count += len(data.get('data', []))
+                    elif fname.startswith('stalker_videos_'):
+                        video_count += len(data.get('data', []))
+            except Exception:
+                pass
+
+        now = time.time()
+        if total_size < 1024 * 1024:
+            size_str = '{:.0f} KB'.format(total_size / 1024.0)
+        else:
+            size_str = '{:.2f} MB'.format(total_size / (1024.0 * 1024.0))
+
+        if oldest_ts:
+            oldest_days = int((now - oldest_ts) / 86400.0)
+            oldest_str = 'heute' if oldest_days == 0 else 'vor {} Tag(en)'.format(oldest_days)
+        else:
+            oldest_str = 'unbekannt'
+
+        if newest_ts:
+            newest_days = int((now - newest_ts) / 86400.0)
+            newest_str = 'heute' if newest_days == 0 else 'vor {} Tag(en)'.format(newest_days)
+        else:
+            newest_str = 'unbekannt'
+
+        xbmcgui.Dialog().ok(
+            'Portal-Cache Info',
+            'Kategorien im Cache: {}[CR]'
+            'Filme/Serien im Cache: {}[CR]'
+            'Cache-Dateien: {}[CR]'
+            'Neuester Eintrag: {}[CR]'
+            'Ältester Eintrag: {}[CR]'
+            'Cache-Größe: {}'.format(
+                cat_count,
+                video_count,
+                len(cache_files),
+                newest_str,
+                oldest_str,
+                size_str,
+            )
+        )
+
+    @staticmethod
+    def __stalker_clear_cache():
+        """Delete all local Stalker portal cache files."""
+        import glob as globmod
+        cache_dir = G.addon_config.token_path
+        pattern = os.path.join(cache_dir, 'stalker_*.json')
+        cache_files = globmod.glob(pattern)
+
+        if not cache_files:
+            xbmcgui.Dialog().ok('Portal-Cache', 'Kein Cache vorhanden – nichts zu löschen.')
+            return
+
+        confirmed = xbmcgui.Dialog().yesno(
+            'Portal-Cache löschen',
+            'Soll der Portal-Cache wirklich gelöscht werden?[CR][CR]'
+            'Beim nächsten Öffnen eines Ordners werden alle Daten '
+            'neu vom Server geladen. Das kann einige Sekunden dauern.'
+        )
+        if not confirmed:
+            return
+
+        deleted = 0
+        for fp in cache_files:
+            try:
+                if xbmcvfs.delete(fp):
+                    deleted += 1
+            except Exception:
+                pass
+
+        xbmcgui.Dialog().ok(
+            'Portal-Cache gelöscht',
+            '{} Cache-Datei(en) gelöscht.[CR]'
+            'Beim nächsten Öffnen eines Ordners werden die Daten '
+            'neu vom Server geladen.'.format(deleted)
+        )
 
     # ------------------------------------------------------------------
     # TMDB Filter (Genre / Year / Rating)
@@ -1545,6 +1681,10 @@ class StalkerAddon:
                 self.__update_new_data()
             elif params['action'] == 'manage_folders':
                 self.__manage_folder_selection(params)
+            elif params['action'] == 'stalker_cache_info':
+                self.__stalker_cache_info()
+            elif params['action'] == 'stalker_clear_cache':
+                self.__stalker_clear_cache()
             elif params['action'] == 'tmdb_cache_info':
                 self.__show_tmdb_cache_info()
             elif params['action'] == 'tmdb_refresh_now':
