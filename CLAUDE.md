@@ -47,6 +47,8 @@ das Addon herunterzuladen und in Kodi zu installieren. Ohne aktuelle ZIP ist die
 |---|---|---|
 | Button unsichtbar | `<data>` statt `<action>`, `format="action"` am Control | KODI_SETTINGS_REFERENCE.md §2 |
 | Spinner unsichtbar | `format="integer"` statt `subtype="integer"` | KODI_SETTINGS_REFERENCE.md §4 |
+| Nur Pfeile statt Dropdown | `type="list"` statt `type="spinner"` am Control | KODI_SETTINGS_REFERENCE.md §3b/§4 |
+| API-Key/Passwort sichtbar | `<hidden>true</hidden>` als Kind-Element in `<control>` | KODI_SETTINGS_REFERENCE.md §6a |
 | Ausgrauen klappt nicht | `<dependencies>` Block statt alter `<enable>eq(...)` Syntax | KODI_SETTINGS_REFERENCE.md §7 |
 | String fehlt / leer | Beide .po-Dateien pflegen (en_gb + de_de) | KODI_SETTINGS_REFERENCE.md §9 |
 | Setting nach Klick auf "Schließen" noch aktiv | `<close>true</close>` in Action-Settings | KODI_SETTINGS_REFERENCE.md §2 |
@@ -472,9 +474,9 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/review-addon-settings-docs-uVHz3`
+- Branch: `claude/analyze-tmdb-settings-Jzezc`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.4.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.5.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -487,7 +489,9 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 | `<dependencies>` Syntax überall | `claude/review-addon-settings-docs-uVHz3` | Alle alten `<enable>eq(...)` und `<enable>eq(-1,true)</enable>` Syntax durch korrekte `<dependencies><dependency type="enable">` Blöcke ersetzt. Alle TMDB-Settings werden beim Deaktivieren korrekt ausgegraut. |
 | `<close>true</close>` bei Refresh-Buttons | `claude/review-addon-settings-docs-uVHz3` | "Alle Daten aktualisieren", "Nur neue Inhalte", "TMDB-Metadaten aktualisieren" schließen Einstellungen automatisch bevor der Fortschrittsbalken erscheint. |
 | Ja/Nein-Dialog bei Cache löschen | `claude/review-addon-settings-docs-uVHz3` | Vor dem Löschen des TMDB-Caches erscheint eine Bestätigungsabfrage. Verhindert versehentliches Löschen. |
-| API-Key sichtbar (kein Sternchen) | `claude/review-addon-settings-docs-uVHz3` | `hidden="true"` vom API-Key-Feld entfernt. Der Schlüssel ist jetzt im Klartext sichtbar (kein Verstecken nötig). |
+| API-Key maskiert (Sternchen) | `claude/analyze-tmdb-settings-Jzezc` | `<hidden>true</hidden>` als Kind-Element in `<control>` – API-Key wird mit `****` angezeigt. Vorher fälschlich im Klartext (hidden war als Attribut entfernt worden). |
+| Dropdown statt Spinner | `claude/analyze-tmdb-settings-Jzezc` | `tmdb_language` und `tmdb_cache_days` nutzen jetzt `type="list"` statt `type="spinner"` – Popup-Liste mit allen Optionen statt nur Pfeile. |
+| Spickzettel: §3b, §4, §6a neu | `claude/analyze-tmdb-settings-Jzezc` | KODI_SETTINGS_REFERENCE.md um `type="list"` (Dropdown vs Spinner) und `<hidden>true</hidden>` (Passwort-Maskierung) ergänzt. Fehler-Checkliste erweitert. |
 | Echte Buttons in Einstellungen | `claude/review-addon-settings-docs-uVHz3` | Alle "Aktion"-Toggles durch echte `type="action"` Buttons ersetzt. Korrekte `version="1"` Syntax: `<data>` + `<control type="button" format="action"/>`. Toggle-Erkennungscode aus service.py entfernt. CLAUDE.md Regeln 1+4 korrigiert. |
 | TMDB-Negativcache-Bug-Fix | `claude/tmdb-cache-performance-Jb0xr` | Filme ohne TMDB-Treffer wurden trotz Cache-Eintrag bei jedem Ordner-Öffnen erneut live abgefragt. Sentinel-Objekt `_CACHE_MISS` unterscheidet jetzt "nicht im Cache" von "gecacht, kein Treffer". 3. Öffnen ist jetzt genauso schnell wie 2. |
 | Settings-Reload-Fix | `claude/fix-settings-reload-786Qf` | Alle getSetting()-Aufrufe werden jetzt bei jeder Navigation neu ausgeführt (nicht nur beim ersten Prozessstart). Betrifft TMDB, Filter, Portal, Cache. TMDB-Singleton wird ebenfalls zurückgesetzt. |

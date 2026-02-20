@@ -66,10 +66,15 @@
 
 ---
 
-## 3. String Dropdown/Spinner (Auswahl aus Text-Werten)
+## 3. String Auswahl aus Text-Werten
 
 Der gespeicherte Wert ist der Text innerhalb von `<option>...</option>`.
 Der `label`-Wert ist nur die Anzeigebezeichnung (String-ID).
+
+### 3a. Spinner (Pfeile zum Blättern)
+
+Zeigt Hoch/Runter-Pfeile. Nutzer blättert einzeln durch die Optionen.
+Geeignet für 2–3 Optionen oder wenn wenig Platz ist.
 
 ```xml
 <setting id="meine_sprache" type="string" label="32030" help="32031">
@@ -86,17 +91,41 @@ Der `label`-Wert ist nur die Anzeigebezeichnung (String-ID).
 </setting>
 ```
 
-Python-Zugriff:
+### 3b. Dropdown-Liste (Popup mit allen Optionen)
+
+Zeigt beim Klick eine Popup-Liste mit allen Optionen auf einmal.
+**Empfohlen bei 3+ Optionen** – der Nutzer sieht sofort alle Auswahl­möglichkeiten.
+
+```xml
+<setting id="meine_sprache" type="string" label="32030" help="32031">
+    <level>0</level>
+    <default>de-DE</default>
+    <constraints>
+        <options>
+            <option label="32032">de-DE</option>
+            <option label="32033">en-US</option>
+            <option label="32034">fr-FR</option>
+        </options>
+    </constraints>
+    <control type="list" format="string" />
+</setting>
+```
+
+**Unterschied:** Nur die `<control>`-Zeile ändert sich: `type="spinner"` → `type="list"`.
+
+Python-Zugriff (identisch für beide):
 ```python
 sprache = addon.getSetting('meine_sprache')   # z.B. "de-DE"
 ```
 
 ---
 
-## 4. Integer Dropdown/Spinner (Auswahl aus benannten Optionen)
+## 4. Integer Auswahl aus benannten Optionen
 
 Der gespeicherte Wert ist der Zahlenindex (0, 1, 2, ...) – **nicht** der Label-Text.
+Wie bei String (§3) gibt es **Spinner** und **Dropdown-Liste**.
 
+### Spinner (Pfeile)
 ```xml
 <setting id="mein_modus" type="integer" label="32040" help="32041">
     <level>0</level>
@@ -109,6 +138,22 @@ Der gespeicherte Wert ist der Zahlenindex (0, 1, 2, ...) – **nicht** der Label
         </options>
     </constraints>
     <control type="spinner" format="integer" />
+</setting>
+```
+
+### Dropdown-Liste (Popup – empfohlen bei 3+ Optionen)
+```xml
+<setting id="mein_modus" type="integer" label="32040" help="32041">
+    <level>0</level>
+    <default>0</default>
+    <constraints>
+        <options>
+            <option label="32042">0</option>
+            <option label="32043">1</option>
+            <option label="32044">2</option>
+        </options>
+    </constraints>
+    <control type="list" format="integer" />
 </setting>
 ```
 
@@ -162,6 +207,40 @@ tage = int(addon.getSetting('cache_tage') or '30')
     </constraints>
     <control type="edit" format="string" />
 </setting>
+```
+
+---
+
+## 6a. Passwort / API-Key maskiert (String Edit mit Hidden)
+
+Wenn der eingegebene Text mit Sternchen (`****`) maskiert werden soll (Passwörter, API-Keys):
+
+```xml
+<setting id="mein_passwort" type="string" label="32065" help="32066">
+    <level>0</level>
+    <constraints>
+        <allowempty>true</allowempty>
+    </constraints>
+    <control type="edit" format="string">
+        <hidden>true</hidden>
+    </control>
+</setting>
+```
+
+**Wichtig:**
+- `<hidden>true</hidden>` ist ein **Kind-Element** von `<control>`, KEIN Attribut!
+- Der Wert wird auf der Festplatte trotzdem unverschlüsselt in `settings.xml` gespeichert
+- Quelle: Kodi-eigenes `system/settings/settings.xml` (`services.webserverpassword`)
+
+❌ **FALSCH:**
+```xml
+<control type="edit" format="string" hidden="true" />   <!-- falsch: hidden als Attribut -->
+```
+✅ **KORREKT:**
+```xml
+<control type="edit" format="string">
+    <hidden>true</hidden>                                <!-- korrekt: Kind-Element -->
+</control>
 ```
 
 ---
@@ -272,7 +351,7 @@ Fehlt ein String in `en_gb/strings.po` → kein Fallback → Element unsichtbar.
         <control type="toggle" />
     </setting>
 
-    <!-- 2. Text-Eingabe, ausgegraut wenn TMDB aus -->
+    <!-- 2. Text-Eingabe (maskiert), ausgegraut wenn TMDB aus -->
     <setting id="tmdb_api_key" type="string" label="32104" help="32105">
         <level>0</level>
         <dependencies>
@@ -283,10 +362,12 @@ Fehlt ein String in `en_gb/strings.po` → kein Fallback → Element unsichtbar.
         <constraints>
             <allowempty>true</allowempty>
         </constraints>
-        <control type="edit" format="string" />
+        <control type="edit" format="string">
+            <hidden>true</hidden>
+        </control>
     </setting>
 
-    <!-- 3. String-Dropdown, ausgegraut wenn TMDB aus -->
+    <!-- 3. Dropdown-Liste, ausgegraut wenn TMDB aus -->
     <setting id="tmdb_language" type="string" label="32106" help="32107">
         <level>0</level>
         <dependencies>
@@ -302,7 +383,7 @@ Fehlt ein String in `en_gb/strings.po` → kein Fallback → Element unsichtbar.
                 <option label="32162">en-GB</option>
             </options>
         </constraints>
-        <control type="spinner" format="string" />
+        <control type="list" format="string" />
     </setting>
 
     <!-- 4. Action-Button, ausgegraut wenn TMDB aus, schließt Einstellungen -->
@@ -332,6 +413,8 @@ Fehlt ein String in `en_gb/strings.po` → kein Fallback → Element unsichtbar.
 |---|---|---|
 | Button unsichtbar | `<action>` statt `<data>`, oder fehlendes `format="action"` | Syntax aus Abschnitt 2 verwenden |
 | Spinner/Dropdown unsichtbar | `subtype=` statt `format=` | `<control type="spinner" format="integer" />` |
+| Nur Pfeile statt Dropdown | `type="spinner"` statt `type="list"` | `<control type="list" format="string" />` (§3b/§4) |
+| API-Key/Passwort im Klartext | `<hidden>` fehlt oder als Attribut geschrieben | `<hidden>true</hidden>` als Kind-Element von `<control>` (§6a) |
 | Setting wird beim Neustart ignoriert | Relative `eq(-1,true)` Abhängigkeit nach Umbau | `<dependencies>` Syntax aus Abschnitt 7 nutzen |
 | Ausgrauen funktioniert nicht | Alte `<enable>eq(...)` Syntax | Zu `<dependencies>` migrieren |
 | Deutsches Setting leer | String-ID fehlt in `de_de/strings.po` | Beide .po-Dateien pflegen |

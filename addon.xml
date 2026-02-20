@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.4" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.5" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,15 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.5  (2026-02-20)
+- Fix: API-Key wird jetzt mit Sternchen (****) maskiert in den Einstellungen.
+  Korrekte Kodi-21-Syntax: &lt;hidden&gt;true&lt;/hidden&gt; als Kind-Element
+  statt als Attribut. War in v0.2.4 fälschlich im Klartext sichtbar.
+- Fix: Sprachauswahl und Cache-Tage zeigen jetzt ein Dropdown-Popup statt
+  nur Hoch/Runter-Pfeile. control type="list" statt type="spinner".
+- Docs: Spickzettel KODI_SETTINGS_REFERENCE.md um §3b (Dropdown-Liste),
+  §6a (Passwort-Maskierung) und Fehler-Checkliste erweitert.
+
 v0.2.4  (2026-02-20)
 - Improvement: Language selection in the TMDB tab is now a dropdown instead
   of a free-text field. 9 languages available: Deutsch (de-DE), English USA

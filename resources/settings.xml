@@ -181,7 +181,9 @@
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
-                    <control type="edit" format="string" />
+                    <control type="edit" format="string">
+                        <hidden>true</hidden>
+                    </control>
                 </setting>
 
                 <setting id="tmdb_language" type="string" label="32106" help="32107">
@@ -205,7 +207,7 @@
                             <option label="32168">tr-TR</option>
                         </options>
                     </constraints>
-                    <control type="spinner" format="string" />
+                    <control type="list" format="string" />
                 </setting>
             </group>
 
@@ -282,7 +284,7 @@
                             <option label="32159">0</option>
                         </options>
                     </constraints>
-                    <control type="spinner" format="integer" />
+                    <control type="list" format="integer" />
                 </setting>
 
                 <setting id="tmdb_show_cache_info" type="action" label="32140" help="32141">
