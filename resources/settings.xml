@@ -180,11 +180,24 @@
                 </setting>
             </group>
 
-            <group id="data_management" label="32112">
-                <setting id="refresh_all_data" type="action" label="32110" help="32111">
+            <group id="portal_cache_group" label="32183">
+                <setting id="stalker_cache_days" type="integer" label="32188" help="32189">
                     <level>0</level>
-                    <close>true</close>
-                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)</data>
+                    <default>1</default>
+                    <constraints>
+                        <options>
+                            <option label="32190">1</option>
+                            <option label="32191">3</option>
+                            <option label="32192">7</option>
+                            <option label="32193">0</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="integer" />
+                </setting>
+
+                <setting id="stalker_show_cache_info" type="action" label="32184" help="32185">
+                    <level>0</level>
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=stalker_cache_info)</data>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
@@ -195,17 +208,6 @@
                     <level>0</level>
                     <close>true</close>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data)</data>
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="button" format="action" />
-                </setting>
-            </group>
-
-            <group id="portal_cache_group" label="32183">
-                <setting id="stalker_show_cache_info" type="action" label="32184" help="32185">
-                    <level>0</level>
-                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=stalker_cache_info)</data>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>

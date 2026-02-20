@@ -97,8 +97,8 @@ msgid "TMDB metadata language code. Default: de-DE"
 msgstr "TMDB Sprach-Code für Metadaten. Standard: de-DE"
 
 msgctxt "#32108"
-msgid "Load all pages at once"
-msgstr "Alle Seiten auf einmal laden"
+msgid "Show all items at once"
+msgstr "Alle Filme auf einmal anzeigen"
 
 msgctxt "#32109"
 msgid "ON = show all films at once (from local cache if available, otherwise all pages from server – slower on first load). OFF = paginated (~20 films per page with Next/Previous buttons)."
@@ -205,12 +205,12 @@ msgid "Saves all films locally. Opening a folder for the second time is instant 
 msgstr "Speichert alle Filme lokal. Ordner öffnet beim zweiten Besuch sofort (unter 1 Sekunde). Der Cache wird einmal täglich automatisch im Hintergrund erneuert."
 
 msgctxt "#32135"
-msgid "Add new content only"
-msgstr "Nur neue Inhalte hinzufügen"
+msgid "Load portal data to cache"
+msgstr "Portal-Daten in den Cache laden"
 
 msgctxt "#32136"
-msgid "Checks for new films and adds them to the cache. Existing data is kept. Only new films get TMDB metadata fetched."
-msgstr "Prüft ob neue Filme vorhanden sind und fügt sie zum Cache hinzu. Vorhandene Daten bleiben erhalten. Nur für neue Filme werden TMDB-Daten geladen."
+msgid "Downloads all film and series data from the portal and saves it locally. Already cached content is kept, only new items are added. TMDB metadata is fetched for new items if enabled."
+msgstr "Lädt alle Film- und Seriendaten vom Portal und speichert sie lokal. Bereits vorhandene Inhalte bleiben erhalten, nur neue werden hinzugefügt. TMDB-Metadaten werden für neue Einträge geladen, wenn aktiviert."
 
 msgctxt "#32137"
 msgid "TMDB Cache"
@@ -411,3 +411,27 @@ msgstr "Portal-Cache löschen"
 msgctxt "#32187"
 msgid "Deletes all locally cached portal data (categories and film lists). Data will be re-loaded from the server the next time you open a folder."
 msgstr "Löscht alle lokal gespeicherten Portal-Daten (Kategorien und Filmlisten). Die Daten werden beim nächsten Öffnen eines Ordners neu vom Server geladen."
+
+msgctxt "#32188"
+msgid "Cache validity"
+msgstr "Cache-Gültigkeitsdauer"
+
+msgctxt "#32189"
+msgid "How long portal data (film lists) is kept before being considered stale. After expiry the data is refreshed automatically in the background. 'Never expire' keeps data until you manually refresh."
+msgstr "Wie lange Portal-Daten (Filmlisten) gespeichert bleiben, bevor sie als veraltet gelten. Nach Ablauf werden die Daten automatisch im Hintergrund erneuert. 'Nie ablaufen' behält die Daten bis zur manuellen Aktualisierung."
+
+msgctxt "#32190"
+msgid "1 day (24 hours)"
+msgstr "1 Tag (24 Stunden)"
+
+msgctxt "#32191"
+msgid "3 days"
+msgstr "3 Tage"
+
+msgctxt "#32192"
+msgid "1 week (7 days)"
+msgstr "1 Woche (7 Tage)"
+
+msgctxt "#32193"
+msgid "Never expire"
+msgstr "Nie ablaufen"

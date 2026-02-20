@@ -296,7 +296,7 @@ class StalkerAddon:
             url = G.get_plugin_url({'action': 'vod_filter'})
             xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
-        stalker_cache = StalkerCache(G.addon_config.token_path)
+        stalker_cache = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days)
         raw_cats = stalker_cache.get_categories('vod')
         if raw_cats is None:
             raw_cats = Api.get_vod_categories() or []
@@ -338,7 +338,7 @@ class StalkerAddon:
             url = G.get_plugin_url({'action': 'series_filter'})
             xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
-        stalker_cache = StalkerCache(G.addon_config.token_path)
+        stalker_cache = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days)
         raw_cats = stalker_cache.get_categories('series')
         if raw_cats is None:
             raw = Api.get_series_categories()
@@ -416,7 +416,7 @@ class StalkerAddon:
         load_all = G.addon_config.max_page_limit >= 9999
         use_cache = G.addon_config.cache_enabled
         if load_all and use_cache and not search_term.strip() and str(params.get('fav', '0')) == '0':
-            cached = StalkerCache(G.addon_config.token_path).get_videos('vod', params['category_id'])
+            cached = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days).get_videos('vod', params['category_id'])
             if cached is not None:
                 videos = {'data': cached, 'total_items': len(cached), 'max_page_items': len(cached)}
         if videos is None:
@@ -466,7 +466,7 @@ class StalkerAddon:
         load_all = G.addon_config.max_page_limit >= 9999
         use_cache = G.addon_config.cache_enabled
         if load_all and use_cache and not search_term.strip() and str(params.get('fav', '0')) == '0':
-            cached = StalkerCache(G.addon_config.token_path).get_videos('series', params['category_id'])
+            cached = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days).get_videos('series', params['category_id'])
             if cached is not None:
                 series = {'data': cached, 'total_items': len(cached), 'max_page_items': len(cached)}
         if series is None:
@@ -846,7 +846,7 @@ class StalkerAddon:
         """
         # Prevent screensaver from interrupting the refresh (e.g. Nvidia Shield)
         xbmc.executebuiltin('InhibitScreensaver(true)')
-        stalker_cache = StalkerCache(G.addon_config.token_path)
+        stalker_cache = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days)
         progress = None
         if not silent:
             progress = xbmcgui.DialogProgress()
@@ -943,51 +943,63 @@ class StalkerAddon:
                 progress.close()
 
     @staticmethod
-    def __update_new_data():
-        """Delta update: fetch new films from server, add to cache.
+    def __update_new_data(silent=False):
+        """Load portal data to cache (smart update).
 
-        Existing cached items are kept untouched.
+        Downloads all film/series data from the portal and saves it locally.
+        Existing cached items are kept untouched – only new items are added.
         TMDB metadata is only fetched for genuinely new films.
         If TMDB is disabled or no key is set, the TMDB step is simply skipped.
+
+        silent=True: no progress dialog, runs as background task (triggered
+        by the automatic cache refresh on Kodi start).
         """
         # Prevent screensaver from interrupting the update (e.g. Nvidia Shield)
         xbmc.executebuiltin('InhibitScreensaver(true)')
-        stalker_cache = StalkerCache(G.addon_config.token_path)
-        progress = xbmcgui.DialogProgress()
-        progress.create('Stalker VOD', 'Kategorien werden geladen...')
+        stalker_cache = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days)
+        progress = None
+        if not silent:
+            progress = xbmcgui.DialogProgress()
+            progress.create('Stalker VOD', 'Kategorien werden geladen...')
         try:
             original_limit = G.addon_config.max_page_limit
             G.addon_config.max_page_limit = 9999
 
+            # --- Fetch and cache category lists ---
             vod_cats = []
             series_cats = []
             try:
                 vod_cats = Api.get_vod_categories() or []
+                stalker_cache.set_categories('vod', vod_cats)
             except Exception:
                 pass
             try:
                 raw = Api.get_series_categories()
                 series_cats = raw if isinstance(raw, list) else []
+                stalker_cache.set_categories('series', series_cats)
             except Exception:
                 pass
 
+            # Apply folder filter so only visible folders are processed
             vod_cats = _apply_category_filter(vod_cats, G.get_filter_file_path('vod'))
             series_cats = _apply_category_filter(series_cats, G.get_filter_file_path('series'))
 
             work = [('vod', c) for c in vod_cats] + [('series', c) for c in series_cats]
             total = len(work)
             if total == 0:
-                xbmcgui.Dialog().ok('Stalker VOD', 'Keine Kategorien gefunden.')
+                if not silent:
+                    xbmcgui.Dialog().ok('Stalker VOD', 'Keine Kategorien gefunden.')
                 return
 
             tmdb = _get_tmdb_client()
             total_new = 0
             for idx, (cat_type, category) in enumerate(work):
-                if progress.iscanceled():
+                if not silent and progress.iscanceled():
                     break
                 pct = int(idx * 100 / total)
                 cat_name = category['title']
-                progress.update(pct, '[{}/{}] {}'.format(idx + 1, total, cat_name))
+                if not silent:
+                    progress.update(pct, '[{}/{}] {}'.format(idx + 1, total, cat_name))
                 try:
                     if cat_type == 'vod':
                         result = Api.get_videos(category['id'], 1, '', 0)
@@ -1003,9 +1015,11 @@ class StalkerAddon:
                 # Only process films not yet in cache
                 new_items = [v for v in server_items if str(v.get('id', '')) not in cached_ids]
                 if not new_items:
+                    # Even if no new items, save the video list to refresh the cache timestamp
+                    stalker_cache.set_videos(cat_type, category['id'], cached_items)
                     continue
 
-                # New items first so they appear at the top in Variant 2
+                # New items first so they appear at the top
                 merged = new_items + cached_items
                 stalker_cache.set_videos(cat_type, category['id'], merged)
                 total_new += len(new_items)
@@ -1013,10 +1027,11 @@ class StalkerAddon:
                 if tmdb:
                     rate_limit_hit = False
                     for video in new_items:
-                        if progress.iscanceled():
+                        if not silent and progress.iscanceled():
                             break
                         vname = _clean_lang_tags(video['name'])
-                        progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, vname))
+                        if not silent:
+                            progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, vname))
                         year = get_int_value(video, 'year')
                         year = year if year != 0 else None
                         try:
@@ -1030,23 +1045,26 @@ class StalkerAddon:
                     tmdb.flush()
                     if rate_limit_hit:
                         G.addon_config.max_page_limit = original_limit
-                        progress.close()
-                        xbmcgui.Dialog().ok(
-                            'Stalker VOD – TMDB abgebrochen',
-                            'TMDB hat zu viele Anfragen in Folge blockiert.[CR][CR]'
-                            'Der Download wurde sicherheitshalber gestoppt.[CR]'
-                            'Die bereits geladenen Daten wurden gespeichert.[CR][CR]'
-                            'Bitte warte einige Minuten und versuche es erneut.'
-                        )
+                        if not silent and progress:
+                            progress.close()
+                        if not silent:
+                            xbmcgui.Dialog().ok(
+                                'Stalker VOD – TMDB abgebrochen',
+                                'TMDB hat zu viele Anfragen in Folge blockiert.[CR][CR]'
+                                'Der Download wurde sicherheitshalber gestoppt.[CR]'
+                                'Die bereits geladenen Daten wurden gespeichert.[CR][CR]'
+                                'Bitte warte einige Minuten und versuche es erneut.'
+                            )
                         return
 
             G.addon_config.max_page_limit = original_limit
-            if not progress.iscanceled():
+            if not silent and not progress.iscanceled():
                 progress.update(100, '{} neue Inhalte hinzugefügt.'.format(total_new))
                 xbmc.sleep(1500)
         finally:
             xbmc.executebuiltin('InhibitScreensaver(false)')
-            progress.close()
+            if not silent and progress:
+                progress.close()
 
     @staticmethod
     def __manage_folder_selection(params):
@@ -1112,7 +1130,7 @@ class StalkerAddon:
             )
             return
 
-        stalker_cache = StalkerCache(G.addon_config.token_path)
+        stalker_cache = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days)
         vod_cats = _apply_category_filter(
             stalker_cache.get_categories('vod') or [],
             G.get_filter_file_path('vod')
@@ -1436,7 +1454,7 @@ class StalkerAddon:
         videos_with_tmdb is a list of (stalker_video, tmdb_info) tuples.
         """
         tmdb = _get_tmdb_client()
-        stalker_cache = StalkerCache(G.addon_config.token_path)
+        stalker_cache = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days)
         raw_cats = stalker_cache.get_categories(cat_type) or []
         filter_file = G.get_filter_file_path(cat_type)
         categories = _apply_category_filter(raw_cats, filter_file)
@@ -1678,7 +1696,7 @@ class StalkerAddon:
             elif params['action'] == 'refresh_all':
                 self.__refresh_all_data(silent=params.get('silent') == '1')
             elif params['action'] == 'update_new_data':
-                self.__update_new_data()
+                self.__update_new_data(silent=params.get('silent') == '1')
             elif params['action'] == 'manage_folders':
                 self.__manage_folder_selection(params)
             elif params['action'] == 'stalker_cache_info':

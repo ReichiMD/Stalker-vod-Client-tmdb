@@ -37,7 +37,7 @@ class BackgroundService(Monitor):
         Logger.debug('Service stopped')
 
     def _check_daily_cache_refresh(self):
-        """Trigger a silent background refresh if the Stalker data cache is stale (> 24 h)."""
+        """Trigger a silent background refresh if the Stalker data cache is stale."""
         addon = xbmcaddon.Addon()
         server = addon.getSetting('server_address')
         mac = addon.getSetting('mac_address')
@@ -47,13 +47,21 @@ class BackgroundService(Monitor):
         if addon.getSetting('cache_enabled') == 'false':
             return
 
+        # Read configured cache validity (days); 0 = never expire
+        try:
+            cache_days = int(addon.getSetting('stalker_cache_days') or '1')
+        except (ValueError, TypeError):
+            cache_days = 1
+        if cache_days == 0:
+            return  # Never expire – no automatic refresh
+
         profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
         from .stalker_cache import StalkerCache
-        cache = StalkerCache(profile)
+        cache = StalkerCache(profile, cache_days=cache_days)
         if cache.categories_are_stale('vod'):
             Logger.debug('Stalker cache stale – triggering silent background refresh')
             xbmc.executebuiltin(
-                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all&silent=1)'
+                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data&silent=1)'
             )
 
     def onSettingsChanged(self):  # pylint: disable=invalid-name

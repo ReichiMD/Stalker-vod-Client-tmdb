@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.0" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.1" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,21 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.1  (2026-02-20)
+- Redesign: "Refresh all data" and "Add new content only" buttons replaced
+  by a single "Load portal data to cache" button in the Portal Cache group.
+  Smart behaviour: loads all data on first use, only adds new content on
+  subsequent uses. Existing cached data is always preserved.
+- New: Portal cache validity setting (1 day, 3 days, 1 week, never expire).
+  Controls how long portal data is kept before automatic background refresh.
+  Default: 1 day (24 hours), matching previous behaviour.
+- Renamed: "Load all pages at once" is now "Show all items at once" /
+  "Alle Filme auf einmal anzeigen" for better clarity.
+- Improvement: Background service now uses smart delta-update instead of
+  full refresh. Faster and preserves existing cache data.
+- Improvement: Cache timestamp is refreshed even for categories with no
+  new content, preventing unnecessary re-downloads.
+
 v0.3.0  (2026-02-20)
 - Fix: Portal-API robuster bei Netzwerkproblemen. requests.get() wird jetzt
   mit try/except abgesichert. Bei ConnectionError oder Timeout wird bis zu

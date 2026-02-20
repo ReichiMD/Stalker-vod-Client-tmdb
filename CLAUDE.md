@@ -209,14 +209,14 @@ Das würde die Ladezeit für unkachet Filme verdoppeln (~600ms statt ~300ms pro 
 
 ## Laden-Strategie & Cache-System
 
-### Übersicht: 4 Einstellungen im Abschnitt [Cache]
+### Übersicht: Einstellungen im Abschnitt [Daten laden] und [Portal-Cache]
 
 | Setting-ID | Typ | Standard | Bedeutung |
 |---|---|---|---|
 | `cache_enabled` | boolean | `true` | Lokalen Stalker-Cache verwenden (ja/nein) |
-| `load_all_pages` | boolean | `false` | Alle Seiten auf einmal laden statt paginiert |
-| `refresh_all_data` | boolean | `false` | Alles löschen + komplett neu laden |
-| `update_new_data` | boolean | `false` | Nur neue Inhalte zum Cache hinzufügen |
+| `load_all_pages` | boolean | `false` | Alle Filme auf einmal anzeigen statt paginiert |
+| `stalker_cache_days` | integer (Dropdown) | `1` | Cache-Gültigkeitsdauer: 1 Tag, 3 Tage, 1 Woche, Nie ablaufen |
+| `update_new_data` | action | – | Portal-Daten in den Cache laden (smart: nur neue hinzufügen) |
 
 ---
 
@@ -247,61 +247,41 @@ if videos is None:
 
 ---
 
-### "Alle Daten aktualisieren" (`refresh_all_data`)
+### "Portal-Daten in den Cache laden" (`update_new_data`)
 
-**Kein** `type="action"` – das funktioniert in Kodi 21 nicht (→ Regel 1 oben).
-Stattdessen `type="boolean"` Toggle. Service erkennt `value == 'true'` in
-`onSettingsChanged()`, setzt sofort zurück auf `false`, ruft `RunPlugin(...?action=refresh_all)` auf.
+**Ein Button für alles:** Ersetzt die früheren zwei Buttons (`refresh_all_data` + `update_new_data`).
+Verhält sich smart: Wenn der Cache leer ist, werden alle Daten geladen. Wenn bereits Daten
+vorhanden sind, werden nur neue Inhalte hinzugefügt. Vorhandene Daten bleiben immer erhalten.
 
-**Implementiert in:** `addon.py::__refresh_all_data()` + `lib/service.py::onSettingsChanged()`
+**Implementiert in:** `addon.py::__update_new_data()` (Button im Portal-Cache Bereich)
 
 **Ablauf:**
 1. Öffnet `xbmcgui.DialogProgress()` mit Abbrechen-Schaltfläche
 2. Lädt alle VOD- + alle Series-Kategorien vom Server → speichert in Stalker-Cache
-3. Iteriert über jede Kategorie, lädt **alle** Videos (`max_page_limit=9999` temporär)
-4. Speichert Videolisten in lokalem Stalker-Cache (JSON pro Kategorie)
-5. Falls TMDB aktiv: holt Metadaten pro Film → befüllt 30-Tage-TMDB-Cache
-6. `tmdb.flush()` nach jeder Kategorie (1 Disk-Write statt N)
-7. Fortschrittsbalken: `[X/Y] Kategoriename: Filmtitel`
-8. Abbrechen jederzeit möglich
+3. Wendet Ordner-Filter an (nur sichtbare Kategorien werden verarbeitet)
+4. Für jede Kategorie: Serverliste holen → mit Cache vergleichen (nach `id`)
+5. **Nur neue Filme** → werden dem Cache vorangestellt (erscheinen oben)
+6. Cache-Zeitstempel wird auch bei Kategorien ohne neue Inhalte aktualisiert
+7. Falls TMDB aktiv: TMDB-Lookup nur für die neuen Filme → `tmdb.flush()`
+8. Vorhandene Filme + TMDB-Daten bleiben **unverändert**
+9. Zeigt am Ende: „X neue Inhalte hinzugefügt."
 
-**Primärer Nutzen:** Kompletten Cache aufbauen. Danach öffnet jede Kategorie sofort (<1s).
-**Silent-Modus:** `?action=refresh_all&silent=1` → kein Dialog (für Hintergrundnutzung durch Service).
-
----
-
-### "Nur neue Inhalte hinzufügen" (`update_new_data`)
-
-Gleicher Toggle-Workaround wie `refresh_all_data`. Service → `RunPlugin(...?action=update_new_data)`.
-
-**Implementiert in:** `addon.py::__update_new_data()` + `lib/service.py::onSettingsChanged()`
-
-**Ablauf:**
-1. Öffnet `xbmcgui.DialogProgress()` mit Abbrechen-Schaltfläche
-2. Lädt alle Kategorien (gefiltert)
-3. Für jede Kategorie: Serverliste holen → mit Cache vergleichen (nach `id`)
-4. **Nur neue Filme** → werden dem Cache vorangestellt (erscheinen oben)
-5. Falls TMDB aktiv: TMDB-Lookup nur für die neuen Filme → `tmdb.flush()`
-6. Vorhandene Filme + TMDB-Daten bleiben **unverändert**
-7. Zeigt am Ende: „X neue Inhalte hinzugefügt."
-
-**Wann benutzen:**
-- Regelmäßig (z.B. wöchentlich) um neue Veröffentlichungen einzuspielen
-- Deutlich schneller als `refresh_all_data` wenn der Katalog sich kaum ändert
-
+**Silent-Modus:** `?action=update_new_data&silent=1` → kein Dialog (für Hintergrundnutzung durch Service).
 **Wenn TMDB nicht konfiguriert:** TMDB-Schritt wird einfach übersprungen – kein Fehler.
 
 ---
 
-### Täglicher Hintergrund-Refresh (Service)
+### Automatischer Hintergrund-Refresh (Service)
 
-Der `BackgroundService.run()` prüft beim Kodi-Start ob der Stalker-Cache älter als 24h ist.
-Falls ja → startet `refresh_all` im Silent-Modus lautlos im Hintergrund.
+Der `BackgroundService.run()` prüft beim Kodi-Start ob der Stalker-Cache abgelaufen ist.
+Die Gültigkeitsdauer ist konfigurierbar über `stalker_cache_days` (Standard: 1 Tag).
+Falls abgelaufen → startet `update_new_data` im Silent-Modus lautlos im Hintergrund.
 
 **Respektiert `cache_enabled`:** Wenn der Nutzer den Cache deaktiviert hat, wird der
-tägliche Refresh nicht ausgelöst.
+automatische Refresh nicht ausgelöst.
+**Respektiert `stalker_cache_days=0` (Nie ablaufen):** Kein automatischer Refresh.
 
-**Prüfung:** `StalkerCache.categories_are_stale('vod')` → vergleicht Datei-Timestamp.
+**Prüfung:** `StalkerCache(profile, cache_days=X).categories_are_stale('vod')` → vergleicht Datei-Timestamp.
 
 ---
 
@@ -309,12 +289,14 @@ tägliche Refresh nicht ausgelöst.
 
 | Inhalt | Datei | Gültigkeit |
 |---|---|---|
-| VOD-Kategorien | `stalker_categories_vod.json` | 24h |
-| Series-Kategorien | `stalker_categories_series.json` | 24h |
-| VOD-Videos (pro Kategorie) | `stalker_videos_vod_{id}.json` | 24h |
-| Series-Videos (pro Kategorie) | `stalker_videos_series_{id}.json` | 24h |
+| VOD-Kategorien | `stalker_cats_vod.json` | konfigurierbar (Standard: 1 Tag) |
+| Series-Kategorien | `stalker_cats_series.json` | konfigurierbar (Standard: 1 Tag) |
+| VOD-Videos (pro Kategorie) | `stalker_videos_vod_{id}.json` | konfigurierbar (Standard: 1 Tag) |
+| Series-Videos (pro Kategorie) | `stalker_videos_series_{id}.json` | konfigurierbar (Standard: 1 Tag) |
 
 Alle Dateien liegen in `{kodi_profile}/plugin.video.stalkervod.tmdb/`.
+Gültigkeitsdauer wird über `stalker_cache_days` konfiguriert (1 Tag, 3 Tage, 1 Woche, Nie ablaufen).
+`StalkerCache(cache_dir, cache_days=N)` akzeptiert den Parameter. `cache_days=0` → nie ablaufen.
 
 ---
 
@@ -512,20 +494,15 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 | Setting-ID | Typ | Standard | Bedeutung |
 |---|---|---|---|
 | `cache_enabled` | boolean | `true` | Lokalen Cache verwenden (aus = immer Server) |
-| `load_all_pages` | boolean | `false` | Alle Seiten auf einmal statt paginiert (nur aktiv bei Cache=an) |
-
-**Gruppe: Daten aktualisieren**
-
-| Setting-ID | Typ | Bedeutung |
-|---|---|---|
-| `refresh_all_data` | action | Alles löschen + komplett neu laden |
-| `update_new_data` | action | Nur neue Inhalte zum Cache hinzufügen |
+| `load_all_pages` | boolean | `false` | Alle Filme auf einmal anzeigen (nur aktiv bei Cache=an) |
 
 **Gruppe: Portal-Cache**
 
 | Setting-ID | Typ | Bedeutung |
 |---|---|---|
+| `stalker_cache_days` | integer (Dropdown) | Cache-Gültigkeitsdauer: 1 Tag (Standard), 3 Tage, 1 Woche, Nie ablaufen |
 | `stalker_show_cache_info` | action | Cache-Statistiken anzeigen (Kategorien, Filme, Größe, Alter) |
+| `update_new_data` | action | Portal-Daten in den Cache laden (smart: vorhandene bleiben, neue werden hinzugefügt) |
 | `stalker_clear_cache` | action | Portal-Cache komplett löschen (mit Bestätigungsdialog) |
 
 ### Tab 3: TMDB
@@ -543,9 +520,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/disable-auto-fetch-startup-rrG00`
+- Branch: `claude/portal-settings-cache-refactor-T3TRf`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.0.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.1.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -553,6 +530,10 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Settings-Umbau Portal-Cache | `claude/portal-settings-cache-refactor-T3TRf` | "Alle Daten aktualisieren" + "Nur neue Inhalte" durch einen Button "Portal-Daten in den Cache laden" ersetzt. Smart: lädt alles beim ersten Mal, danach nur neue Inhalte. In die Portal-Cache-Gruppe verschoben. |
+| Portal-Cache-Gültigkeitsdauer | `claude/portal-settings-cache-refactor-T3TRf` | Neues Dropdown: 1 Tag (Standard), 3 Tage, 1 Woche, Nie ablaufen. StalkerCache akzeptiert `cache_days` Parameter. Hintergrund-Service nutzt konfigurierte Gültigkeit. |
+| Schalter-Umbenennung | `claude/portal-settings-cache-refactor-T3TRf` | "Alle Seiten auf einmal laden" → "Alle Filme auf einmal anzeigen" für bessere Verständlichkeit. |
+| Smart Background Refresh | `claude/portal-settings-cache-refactor-T3TRf` | Hintergrund-Service nutzt jetzt Delta-Update (update_new_data) statt Full-Refresh. Schneller und erhält vorhandene Cache-Daten. Respektiert "Nie ablaufen" Setting. |
 | Stalker-API Retry + Pause | `claude/disable-auto-fetch-startup-rrG00` | Portal-Requests mit try/except + Retry (3 Versuche, exp. Backoff). 100ms Pause zwischen Seiten in get_listing(). Verhindert stilles Überspringen von Kategorien bei Netzwerkproblemen. |
 | Auto-Fetch Erststart deaktiviert | `claude/disable-auto-fetch-startup-rrG00` | Automatischer Datenabruf beim ersten Start entfernt. Nutzer soll zuerst Ordner-Filter konfigurieren. |
 | Portal-Cache-Verwaltung | `claude/disable-auto-fetch-startup-rrG00` | Neue Gruppe "Portal-Cache" in Portal Einstellung mit Buttons "Cache-Info anzeigen" und "Portal-Cache löschen" (analog TMDB-Cache). |
@@ -782,7 +763,7 @@ Dialog 4: Rating-Auswahl
 | Settings: "Basis-Daten" Gruppe | `resources/settings.xml` group `tmdb_fields_group` | Fertig |
 | Settings: "Erweiterte Daten" Gruppe | `resources/settings.xml` group `tmdb_extended_group` | Leer (nur Info-Text) |
 | String-IDs bis 32187 | `strings.po` (en + de) | Belegt |
-| Nächste freie String-ID | 32188 | Frei (32183–32187 = Portal-Cache) |
+| Nächste freie String-ID | 32194 | Frei (32188–32193 = Portal-Cache-Gültigkeit) |
 | `TmdbConfig.use_certification` | `lib/globals.py` | Noch nicht angelegt |
 | TMDB Detail-API-Call | `lib/tmdb.py` | Noch nicht implementiert |
 | FSK im Filter-Dialog | `lib/addon.py` | Noch nicht implementiert |
