@@ -39,44 +39,45 @@ das Addon herunterzuladen und in Kodi zu installieren. Ohne aktuelle ZIP ist die
 
 > **Diese Regeln MÜSSEN in jeder Session beachtet werden, sonst entstehen unsichtbare UI-Elemente.**
 
-### REGEL 1: Kein `type="action"` mit `<action>`-Child in `settings version="1"`
+### REGEL 1: `type="action"` Buttons – korrekte Syntax für `settings version="1"`
 
-**Problem:** In Kodi 21 (Omega) mit `<settings version="1">` ist das `<action>`-Tag
-als Child von `<setting type="action">` **nicht valide**. Kodi 21 ignoriert es still –
-und wirft dabei die **gesamte `<group>`** weg. Der Nutzer sieht gar nichts.
+**Alte Fehlannahme:** Wir dachten, `type="action"` funktioniert gar nicht in Kodi 21.
+**Richtig:** Es funktioniert – aber nur mit der korrekten `version="1"`-Syntax.
+
+**Das Problem war:** Das `<action>`-Child-Tag ist **altes Format** (pre-Kodi 18).
+In `settings version="1"` muss stattdessen `<data>` und `format="action"` am Control verwendet werden.
 
 ```xml
-<!-- ❌ FUNKTIONIERT NICHT in Kodi 21 settings version="1" -->
+<!-- ❌ ALTES FORMAT – funktioniert nicht in settings version="1" -->
 <setting id="my_button" type="action" label="32001">
-    <action>RunPlugin(plugin://...)</action>   <!-- ← dieser Tag killt die ganze Gruppe -->
-    <control type="button" />
+    <action>RunPlugin(plugin://...)</action>   <!-- ← falsche Syntax: <action> statt <data> -->
+    <control type="button" />                 <!-- ← fehlendes format="action" -->
 </setting>
 ```
 
-**Workaround – IMMER SO MACHEN:**
+**Korrekte Syntax – IMMER SO MACHEN:**
 ```xml
-<!-- ✅ KORREKT: boolean toggle als Auslöser -->
-<setting id="my_button" type="boolean" label="32001" help="32002">
+<!-- ✅ KORREKT für settings version="1" (Kodi 19+) -->
+<setting id="my_button" type="action" label="32001" help="32002">
     <level>0</level>
-    <default>false</default>
-    <control type="toggle" />
+    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=do_something)</data>
+    <constraints>
+        <allowempty>true</allowempty>
+    </constraints>
+    <control type="button" format="action" />
 </setting>
 ```
 
-Dazu im Service (`lib/service.py`) in `onSettingsChanged()`:
-```python
-addon = xbmcaddon.Addon()
-if addon.getSetting('my_button') == 'true':
-    addon.setSetting('my_button', 'false')   # sofort zurücksetzen
-    xbmc.executebuiltin('RunPlugin(plugin://...?action=do_something)')
-    return
-```
+**Wichtig:**
+- `<data>` enthält den auszuführenden Kodi-Builtin-Befehl
+- `<control type="button" format="action" />` – **beide** Attribute sind Pflicht
+- `&` in URLs muss als `&amp;` escaped werden: `?action=foo&amp;type=bar`
+- Kodi führt `<data>` **direkt** beim Klick aus – kein `onSettingsChanged`, kein Service nötig
+- `getSetting('my_button')` gibt für `type="action"` immer `''` zurück (kein gespeicherter Wert)
 
-**Warum funktioniert das?**
-- `type="boolean"` ist vollständig valide in allen Kodi-Versionen.
-- Kodi ruft `onSettingsChanged()` im Service auf, sobald der Nutzer den Schalter umlegt.
-- Der Service setzt den Wert sofort zurück auf `false` (der Schalter springt zurück).
-- Anschließend startet er `RunPlugin(...)` → der gewünschte Effekt tritt ein.
+**Wann stattdessen `type="boolean"` toggle benutzen?**
+Nur wenn ein echter Zustand gespeichert werden soll (z.B. Feature ein/aus).
+Nicht mehr als Button-Workaround nötig.
 
 ### REGEL 2: Sprachdateien – immer BEIDE Dateien pflegen
 
@@ -104,26 +105,15 @@ def onSettingsChanged(self):
     ...
 ```
 
-### REGEL 4: Kein `type="integer"` mit Spinner und `<options>` in `settings version="1"`
+### REGEL 4: `type="integer"` mit Spinner – korrekte Syntax für `settings version="1"`
 
-**Problem:** In Kodi 21 (Omega) schlägt `type="integer"` mit
-`<control type="spinner" subtype="integer" />` und `<options>`-Block fehl,
-weil Kodi ein `format`-Attribut am Control erwartet – das bei Spinner-Controls
-nicht vorgesehen ist. Fehler im Log:
+**Alte Fehlannahme:** Wir dachten, integer-Spinner funktionieren nicht in Kodi 21.
+**Richtig:** Es funktioniert – aber das Attribut heißt `format=`, nicht `subtype=`.
 
-```
-error <ISettingControl>: error reading "format" attribute of <control>
-error <CSetting>: error reading <control> tag of "my_setting"
-warning <CSettingGroup>: unable to read setting "my_setting"
-```
-
-Das Setting wird **lautlos weggeworfen**. In der UI fehlt nur dieses eine Element –
-aber da der gespeicherte Wert nie geladen wird, bleibt die Variable intern auf ihrem
-Standardwert (z.B. 0 = aus). Alle anderen Settings in der Gruppe bleiben sichtbar,
-wirken aber nicht, weil der Modus-Wert fehlt.
+Das Fehler-Log war sogar der Hinweis: Kodi **erwartet** `format=`, findet `subtype=` → wirft Setting weg.
 
 ```xml
-<!-- ❌ FUNKTIONIERT NICHT in Kodi 21 settings version="1" -->
+<!-- ❌ FALSCH – subtype= ist kein gültiges Attribut für version="1" -->
 <setting id="my_mode" type="integer" label="32001">
     <constraints>
         <options>
@@ -131,35 +121,38 @@ wirken aber nicht, weil der Modus-Wert fehlt.
             <option label="32003">1</option>
         </options>
     </constraints>
-    <control type="spinner" subtype="integer" />   <!-- ← fehlendes format= killt das Setting -->
+    <control type="spinner" subtype="integer" />   <!-- ← subtype= gibt es nicht, heißt format= -->
 </setting>
 ```
 
-**Workaround – IMMER SO MACHEN:**
-Für Mehrfach-Auswahl (z.B. 3 Modi) statt eines Spinners **mehrere `type="boolean"` Toggles** verwenden:
-
+**Korrekte Syntax – IMMER SO MACHEN:**
 ```xml
-<!-- ✅ KORREKT: zwei boolean toggles statt eines 3-Wege-Spinners -->
-<setting id="filter_use_keywords" type="boolean" label="32001" help="32002">
+<!-- ✅ KORREKT für settings version="1" – Dropdown/Spinner mit beschrifteten Optionen -->
+<setting id="my_mode" type="integer" label="32001">
     <level>0</level>
-    <default>false</default>
-    <control type="toggle" />
-</setting>
-<setting id="filter_use_manual" type="boolean" label="32003" help="32004">
-    <level>0</level>
-    <default>false</default>
-    <control type="toggle" />
+    <default>0</default>
+    <constraints>
+        <options>
+            <option label="32002">0</option>   <!-- Alles anzeigen -->
+            <option label="32003">1</option>   <!-- Nur Deutsch -->
+            <option label="32004">2</option>   <!-- Nur Favoriten -->
+        </options>
+    </constraints>
+    <control type="spinner" format="integer" />   <!-- ← format= nicht subtype= -->
 </setting>
 ```
 
-Im Python-Code dann einfach:
+Im Python-Code:
 ```python
-if cfg.use_manual:
-    # manuelle Auswahl (hat Vorrang)
-elif cfg.use_keywords:
-    # Stichwörter-Filter
+mode = int(addon.getSetting('my_mode') or '0')
+if mode == 1:
+    # Nur Deutsch
+elif mode == 2:
+    # Nur Favoriten
 # sonst: alles anzeigen
 ```
+
+**Referenz:** `pvr.dvbviewer` (offizielles Kodi-PVR-Addon) verwendet exakt diese Syntax.
 
 ---
 
@@ -569,9 +562,9 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/tmdb-cache-performance-Jb0xr`
+- Branch: `claude/review-addon-settings-docs-uVHz3`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.1.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.2.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -579,6 +572,7 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Echte Buttons in Einstellungen | `claude/review-addon-settings-docs-uVHz3` | Alle "Aktion"-Toggles durch echte `type="action"` Buttons ersetzt. Korrekte `version="1"` Syntax: `<data>` + `<control type="button" format="action"/>`. Toggle-Erkennungscode aus service.py entfernt. CLAUDE.md Regeln 1+4 korrigiert. |
 | TMDB-Negativcache-Bug-Fix | `claude/tmdb-cache-performance-Jb0xr` | Filme ohne TMDB-Treffer wurden trotz Cache-Eintrag bei jedem Ordner-Öffnen erneut live abgefragt. Sentinel-Objekt `_CACHE_MISS` unterscheidet jetzt "nicht im Cache" von "gecacht, kein Treffer". 3. Öffnen ist jetzt genauso schnell wie 2. |
 | Settings-Reload-Fix | `claude/fix-settings-reload-786Qf` | Alle getSetting()-Aufrufe werden jetzt bei jeder Navigation neu ausgeführt (nicht nur beim ersten Prozessstart). Betrifft TMDB, Filter, Portal, Cache. TMDB-Singleton wird ebenfalls zurückgesetzt. |
 | Auswahl: welche Infos anzeigen | `claude/tmdb-metadata-strategy-Dc4Wn` | Neue Gruppe "What to show" im TMDB-Tab mit 5 Toggles: Poster, Fanart, Plot, Rating, Genre. Alle standardmäßig aktiv. `TmdbConfig` hat 5 neue `use_*`-Felder; `_apply_tmdb_to_item()` wertet sie aus. |

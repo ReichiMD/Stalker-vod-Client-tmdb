@@ -59,58 +59,11 @@ class BackgroundService(Monitor):
             )
 
     def onSettingsChanged(self):  # pylint: disable=invalid-name
-        """React to setting changes:
-        - Manual refresh toggle: run refresh_all and reset the toggle.
-        - First-time setup: offer to pre-fetch all data when credentials are entered.
+        """React to setting changes – first-time setup wizard only.
+        Action buttons (refresh, update, TMDB, folder filter) are now real
+        type="action" buttons in settings.xml and execute directly via RunPlugin.
         """
         addon = xbmcaddon.Addon()
-
-        # --- Manual refresh: delete all + reload ---
-        if addon.getSetting('refresh_all_data') == 'true':
-            addon.setSetting('refresh_all_data', 'false')
-            xbmc.executebuiltin(
-                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)')
-            return
-
-        # --- Delta update: only add new content ---
-        if addon.getSetting('update_new_data') == 'true':
-            addon.setSetting('update_new_data', 'false')
-            xbmc.executebuiltin(
-                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data)')
-            return
-
-        # --- TMDB cache info dialog ---
-        if addon.getSetting('tmdb_show_cache_info') == 'true':
-            addon.setSetting('tmdb_show_cache_info', 'false')
-            xbmc.executebuiltin(
-                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_cache_info)')
-            return
-
-        # --- TMDB metadata refresh (TMDB-only, no Stalker re-download) ---
-        if addon.getSetting('tmdb_refresh_now') == 'true':
-            addon.setSetting('tmdb_refresh_now', 'false')
-            xbmc.executebuiltin(
-                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_refresh_now)')
-            return
-
-        # --- TMDB cache delete ---
-        if addon.getSetting('tmdb_clear_cache') == 'true':
-            addon.setSetting('tmdb_clear_cache', 'false')
-            xbmc.executebuiltin(
-                'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_clear_cache)')
-            return
-
-        # --- Folder filter selection buttons (boolean toggle workaround) ---
-        for setting_id, cat_type in [
-            ('folder_filter_select_vod', 'vod'),
-            ('folder_filter_select_series', 'series'),
-            ('folder_filter_select_tv', 'tv'),
-        ]:
-            if addon.getSetting(setting_id) == 'true':
-                addon.setSetting(setting_id, 'false')
-                xbmc.executebuiltin(
-                    'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=manage_folders&type={})'.format(cat_type))
-                return
 
         # --- First-time setup wizard ---
         server = addon.getSetting('server_address')

@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.1" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.2" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,16 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.2  (2026-02-20)
+- Improvement: All action buttons in Settings are now real clickable buttons
+  instead of boolean toggles that snap back. Affects: "Refresh all data",
+  "Add new content only", "Load TMDB metadata now", "Delete TMDB cache",
+  "Show cache info", "Select VOD folders", "Select Series folders",
+  "Select TV folders". Buttons use type="action" with correct version="1"
+  syntax. Clicking a button executes the action immediately - no toggle
+  bounce, no service callback needed for these settings.
+- Internal: removed all toggle-detection code from service.py.
+
 v0.2.1  (2026-02-20)
 - Fix: TMDB-Negativcache-Bug behoben. Filme die auf TMDB nicht gefunden werden,
   wurden trotz Cache-Eintrag bei jedem Ordner-Öffnen erneut live abgefragt.

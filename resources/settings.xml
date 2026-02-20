@@ -92,22 +92,31 @@
             </group>
 
             <group id="filter_select_group" label="32124">
-                <setting id="folder_filter_select_vod" type="boolean" label="32125" help="32126">
+                <setting id="folder_filter_select_vod" type="action" label="32125" help="32126">
                     <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=manage_folders&amp;type=vod)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
                 </setting>
 
-                <setting id="folder_filter_select_series" type="boolean" label="32127" help="32128">
+                <setting id="folder_filter_select_series" type="action" label="32127" help="32128">
                     <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=manage_folders&amp;type=series)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
                 </setting>
 
-                <setting id="folder_filter_select_tv" type="boolean" label="32129" help="32130">
+                <setting id="folder_filter_select_tv" type="action" label="32129" help="32130">
                     <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=manage_folders&amp;type=tv)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
                 </setting>
             </group>
         </category>
@@ -130,16 +139,22 @@
             </group>
 
             <group id="data_management" label="32112">
-                <setting id="refresh_all_data" type="boolean" label="32110" help="32111">
+                <setting id="refresh_all_data" type="action" label="32110" help="32111">
                     <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
                 </setting>
 
-                <setting id="update_new_data" type="boolean" label="32135" help="32136">
+                <setting id="update_new_data" type="action" label="32135" help="32136">
                     <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
                 </setting>
             </group>
         </category>
@@ -216,22 +231,31 @@
                     <control type="edit" format="string" />
                 </setting>
 
-                <setting id="tmdb_show_cache_info" type="boolean" label="32140" help="32141">
+                <setting id="tmdb_show_cache_info" type="action" label="32140" help="32141">
                     <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_cache_info)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
                 </setting>
 
-                <setting id="tmdb_refresh_now" type="boolean" label="32142" help="32143">
+                <setting id="tmdb_refresh_now" type="action" label="32142" help="32143">
                     <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_refresh_now)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
                 </setting>
 
-                <setting id="tmdb_clear_cache" type="boolean" label="32144" help="32145">
+                <setting id="tmdb_clear_cache" type="action" label="32144" help="32145">
                     <level>0</level>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_clear_cache)</data>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="action" />
                 </setting>
             </group>
         </category>
