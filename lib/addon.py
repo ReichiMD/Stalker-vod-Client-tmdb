@@ -17,7 +17,7 @@ from .stalker_cache import StalkerCache
 from .utils import ask_for_input, get_int_value
 from .api import Api
 from .loggers import Logger
-from .tmdb import TmdbClient, TmdbRateLimitError
+from .tmdb import TmdbClient, TmdbRateLimitError, _CACHE_MISS
 
 
 _tmdb_client_singleton = None
@@ -289,6 +289,13 @@ class StalkerAddon:
         url = G.get_plugin_url({'action': 'vod_search', 'fav': 0, 'isContextMenuSearch': False})
         xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
+        # Add a filter option (only visible when TMDB is enabled)
+        if G.tmdb_config.enabled and G.tmdb_config.api_key:
+            list_item = xbmcgui.ListItem(label='VOD FILTER')
+            list_item.setArt({'thumb': G.get_custom_thumb_path('filter.png')})
+            url = G.get_plugin_url({'action': 'vod_filter'})
+            xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
+
         stalker_cache = StalkerCache(G.addon_config.token_path)
         raw_cats = stalker_cache.get_categories('vod')
         if raw_cats is None:
@@ -323,6 +330,13 @@ class StalkerAddon:
         list_item.setArt({'thumb': G.get_custom_thumb_path('search.png')})
         url = G.get_plugin_url({'action': 'series_search', 'fav': 0, 'isContextMenuSearch': False})
         xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
+
+        # Add a filter option (only visible when TMDB is enabled)
+        if G.tmdb_config.enabled and G.tmdb_config.api_key:
+            list_item = xbmcgui.ListItem(label='SERIES FILTER')
+            list_item.setArt({'thumb': G.get_custom_thumb_path('filter.png')})
+            url = G.get_plugin_url({'action': 'series_filter'})
+            xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
 
         stalker_cache = StalkerCache(G.addon_config.token_path)
         raw_cats = stalker_cache.get_categories('series')
@@ -1179,6 +1193,240 @@ class StalkerAddon:
         else:
             xbmcgui.Dialog().ok('TMDB-Cache', 'Fehler: Cache konnte nicht gelöscht werden.')
 
+    # ------------------------------------------------------------------
+    # TMDB Filter (Genre / Year / Rating)
+    # ------------------------------------------------------------------
+
+    def __vod_filter(self, params):
+        """Entry point for VOD filter (action=vod_filter)."""
+        self.__run_filter('vod', params)
+
+    def __series_filter(self, params):
+        """Entry point for Series filter (action=series_filter)."""
+        self.__run_filter('series', params)
+
+    def __run_filter(self, cat_type, params):
+        """Main filter flow: collect data → dialog → display results."""
+        tmdb = _get_tmdb_client()
+        if tmdb is None:
+            xbmcgui.Dialog().ok(
+                'Stalker VOD',
+                'Filter benötigt TMDB-Daten.[CR][CR]'
+                'Bitte aktiviere TMDB in den Einstellungen,[CR]'
+                'gib einen API-Key ein und führe[CR]'
+                '"Alle Daten aktualisieren" aus.'
+            )
+            return
+
+        # Collect all videos with their TMDB data from cache
+        videos_with_tmdb, all_genres, all_years, all_ratings = self.__collect_filter_data(cat_type)
+
+        if not videos_with_tmdb:
+            xbmcgui.Dialog().ok(
+                'Stalker VOD',
+                'Keine TMDB-Daten im Cache gefunden.[CR][CR]'
+                'Bitte führe zuerst "Alle Daten aktualisieren"[CR]'
+                'in den Einstellungen aus.'
+            )
+            return
+
+        # Show filter type selection
+        filter_labels = ['Genre', 'Jahr / Jahrzehnt', 'Mindestbewertung', 'Alle Kriterien (Kombination)']
+        choice = xbmcgui.Dialog().select('Filtern nach:', filter_labels)
+        if choice < 0:
+            return
+
+        selected_genres = None
+        selected_year_range = None
+        selected_min_rating = None
+
+        if choice == 0:
+            # Genre only
+            selected_genres = self.__ask_genre_filter(all_genres)
+            if selected_genres is None:
+                return
+        elif choice == 1:
+            # Year only
+            selected_year_range = self.__ask_year_filter(all_years)
+            if selected_year_range is None:
+                return
+        elif choice == 2:
+            # Rating only
+            selected_min_rating = self.__ask_rating_filter()
+            if selected_min_rating is None:
+                return
+        elif choice == 3:
+            # Combination: all three steps
+            selected_genres = self.__ask_genre_filter(all_genres)
+            if selected_genres is None:
+                return
+            selected_year_range = self.__ask_year_filter(all_years)
+            # Cancel on year/rating = skip that criterion (not abort)
+            selected_min_rating = self.__ask_rating_filter()
+
+        # Apply filters
+        filtered = self.__apply_filters(
+            videos_with_tmdb, selected_genres, selected_year_range, selected_min_rating
+        )
+
+        if not filtered:
+            xbmcgui.Dialog().ok('Stalker VOD', 'Keine Filme gefunden die allen Kriterien entsprechen.')
+            return
+
+        # Build description for plugin category
+        filter_desc = self.__build_filter_desc(selected_genres, selected_year_range, selected_min_rating)
+
+        # Display as flat listing
+        video_list = [v for v, _ in filtered]
+        result = {'data': video_list, 'total_items': len(video_list), 'max_page_items': len(video_list)}
+        label = 'VOD' if cat_type == 'vod' else 'SERIES'
+        xbmcplugin.setPluginCategory(G.get_handle(), '{} FILTER: {}'.format(label, filter_desc))
+        xbmcplugin.setContent(G.get_handle(), 'videos')
+        if cat_type == 'vod':
+            StalkerAddon.__create_video_listing(result, {
+                'category': 'Filter: ' + filter_desc,
+                'update_listing': False, 'fav': '0', 'page': 1
+            })
+        else:
+            StalkerAddon.__create_series_listing(result, {
+                'category': 'Filter: ' + filter_desc,
+                'update_listing': False, 'fav': '0', 'page': 1
+            })
+
+    def __collect_filter_data(self, cat_type):
+        """Load all cached videos and match with TMDB cache data.
+
+        Returns (videos_with_tmdb, all_genres, all_years, all_ratings) where
+        videos_with_tmdb is a list of (stalker_video, tmdb_info) tuples.
+        """
+        tmdb = _get_tmdb_client()
+        stalker_cache = StalkerCache(G.addon_config.token_path)
+        raw_cats = stalker_cache.get_categories(cat_type) or []
+        filter_file = G.get_filter_file_path(cat_type)
+        categories = _apply_category_filter(raw_cats, filter_file)
+
+        all_genres = set()
+        all_years = set()
+        all_ratings = set()
+        videos_with_tmdb = []
+
+        for category in categories:
+            videos = stalker_cache.get_videos(cat_type, category['id'])
+            if not videos:
+                continue
+            for video in videos:
+                name = _clean_lang_tags(video['name'])
+                year = get_int_value(video, 'year')
+                year = year if year != 0 else None
+                is_series = cat_type == 'series' or video.get('series')
+                if is_series:
+                    info = tmdb.get_cached_tv_info(name, year)
+                else:
+                    info = tmdb.get_cached_movie_info(name, year)
+                if info is _CACHE_MISS or info is None:
+                    continue
+                videos_with_tmdb.append((video, info))
+                for g in info.get('genres', []):
+                    all_genres.add(g)
+                if info.get('year') and info['year'] > 0:
+                    all_years.add(info['year'])
+                if info.get('rating') and info['rating'] > 0:
+                    # Round to one decimal for grouping
+                    all_ratings.add(round(info['rating'], 1))
+
+        return videos_with_tmdb, sorted(all_genres), sorted(all_years, reverse=True), sorted(all_ratings, reverse=True)
+
+    @staticmethod
+    def __ask_genre_filter(all_genres):
+        """Show genre multiselect dialog. Returns list of selected genres or None to abort."""
+        if not all_genres:
+            xbmcgui.Dialog().ok('Stalker VOD', 'Keine Genre-Daten im Cache vorhanden.')
+            return None
+        selected = xbmcgui.Dialog().multiselect('Genres wählen (mehrere möglich)', all_genres)
+        if selected is None:
+            return None
+        return [all_genres[i] for i in selected]
+
+    @staticmethod
+    def __ask_year_filter(all_years):
+        """Show year/decade selection dialog. Returns (min_year, max_year) tuple or None."""
+        if not all_years:
+            return None
+        decade_options = [
+            ('2020 – 2029', 2020, 2029),
+            ('2010 – 2019', 2010, 2019),
+            ('2000 – 2009', 2000, 2009),
+            ('1990 – 1999', 1990, 1999),
+            ('1980 – 1989', 1980, 1989),
+            ('Vor 1980', 0, 1979),
+        ]
+        labels = [d[0] for d in decade_options]
+        choice = xbmcgui.Dialog().select('Zeitraum wählen', labels)
+        if choice < 0:
+            return None
+        return (decade_options[choice][1], decade_options[choice][2])
+
+    @staticmethod
+    def __ask_rating_filter():
+        """Show minimum rating selection dialog. Returns float minimum or None."""
+        options = [
+            ('9+ (Herausragend)', 9.0),
+            ('8+ (Sehr gut)', 8.0),
+            ('7+ (Gut)', 7.0),
+            ('6+ (Okay)', 6.0),
+            ('5+ (Durchschnitt)', 5.0),
+        ]
+        labels = [o[0] for o in options]
+        choice = xbmcgui.Dialog().select('Mindestbewertung', labels)
+        if choice < 0:
+            return None
+        return options[choice][1]
+
+    @staticmethod
+    def __apply_filters(videos_with_tmdb, genres, year_range, min_rating):
+        """Filter (video, tmdb_info) pairs based on selected criteria.
+
+        All criteria use AND logic: a film must match ALL active filters.
+        None for a criterion means "no filter" (match all).
+        """
+        result = []
+        for video, info in videos_with_tmdb:
+            # Genre filter: film must have at least one of the selected genres
+            if genres:
+                film_genres = info.get('genres', [])
+                if not any(g in film_genres for g in genres):
+                    continue
+            # Year filter
+            if year_range:
+                film_year = info.get('year', 0)
+                if not (year_range[0] <= film_year <= year_range[1]):
+                    continue
+            # Rating filter
+            if min_rating is not None:
+                film_rating = info.get('rating', 0)
+                if film_rating < min_rating:
+                    continue
+            result.append((video, info))
+        return result
+
+    @staticmethod
+    def __build_filter_desc(genres, year_range, min_rating):
+        """Build a human-readable description of the active filter criteria."""
+        parts = []
+        if genres:
+            if len(genres) <= 3:
+                parts.append(', '.join(genres))
+            else:
+                parts.append('{} Genres'.format(len(genres)))
+        if year_range:
+            if year_range[0] == 0:
+                parts.append('Vor {}'.format(year_range[1] + 1))
+            else:
+                parts.append('{}-{}'.format(year_range[0], year_range[1]))
+        if min_rating is not None:
+            parts.append('{}+'.format(int(min_rating)))
+        return ' / '.join(parts) if parts else 'Alle'
+
     @staticmethod
     def __show_tmdb_cache_info():
         """Show TMDB cache statistics: entry count, age, expiry, file size."""
@@ -1303,6 +1551,10 @@ class StalkerAddon:
                 self.__tmdb_refresh_now()
             elif params['action'] == 'tmdb_clear_cache':
                 self.__tmdb_clear_cache()
+            elif params['action'] == 'vod_filter':
+                self.__vod_filter(params)
+            elif params['action'] == 'series_filter':
+                self.__series_filter(params)
             else:
                 raise ValueError('Invalid param string: {}!'.format(param_string))
         else:

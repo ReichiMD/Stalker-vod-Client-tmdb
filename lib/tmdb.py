@@ -302,6 +302,26 @@ class TmdbClient:
         # cache_days == 0 → never expire: always return what's stored
         return entry.get('data')  # may itself be None (negative cache)
 
+    def get_cached_movie_info(self, title, year=None):
+        """Return cached movie info WITHOUT making any API call.
+
+        Returns the cached dict if found, None if cached-but-no-result
+        (negative cache), or _CACHE_MISS if not in cache at all.
+        Callers should treat _CACHE_MISS as "no data available".
+        """
+        self.__ensure_cache_path()
+        cache_key = self.__make_key(title, year, 'movie')
+        return self.__from_cache(cache_key)
+
+    def get_cached_tv_info(self, title, year=None):
+        """Return cached TV info WITHOUT making any API call.
+
+        Same return semantics as get_cached_movie_info.
+        """
+        self.__ensure_cache_path()
+        cache_key = self.__make_key(title, year, 'tv')
+        return self.__from_cache(cache_key)
+
     def flush(self):
         """Write the in-memory cache to disk once. Call this after processing a full listing.
         This avoids N separate disk writes (one per film) and does a single write instead."""

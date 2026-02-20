@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.7" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.8" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,17 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.8  (2026-02-20)
+- New: "VOD FILTER" and "SERIES FILTER" buttons in the folder view.
+  Filter films by Genre, Year/Decade, or Rating – all from TMDB cache
+  data (no extra API calls). Shows only when TMDB is enabled.
+- New: "All criteria (combination)" filter mode – apply Genre + Year +
+  Rating filters at once with AND logic. Perfect for finding e.g. all
+  Action films from the 2020s rated 7+.
+- New: TMDB settings tab restructured into "Basic data (1 request)" and
+  "Extended data (2nd request)" groups. Prepares for FSK age ratings
+  in a future version. Clear info text about the performance impact.
+
 v0.2.7  (2026-02-20)
 - New: Remove language tags from folder and film names. Strips prefixes
   like "de - " and suffixes like "(DE)" for a cleaner display.
