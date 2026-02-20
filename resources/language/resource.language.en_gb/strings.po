@@ -303,3 +303,39 @@ msgstr "3 months (90 days)"
 msgctxt "#32159"
 msgid "Never delete"
 msgstr "Never delete"
+
+msgctxt "#32160"
+msgid "Deutsch (de-DE)"
+msgstr "Deutsch (de-DE)"
+
+msgctxt "#32161"
+msgid "English – USA (en-US)"
+msgstr "English – USA (en-US)"
+
+msgctxt "#32162"
+msgid "English – UK (en-GB)"
+msgstr "English – UK (en-GB)"
+
+msgctxt "#32163"
+msgid "Français (fr-FR)"
+msgstr "Français (fr-FR)"
+
+msgctxt "#32164"
+msgid "Italiano (it-IT)"
+msgstr "Italiano (it-IT)"
+
+msgctxt "#32165"
+msgid "Español (es-ES)"
+msgstr "Español (es-ES)"
+
+msgctxt "#32166"
+msgid "Nederlands (nl-NL)"
+msgstr "Nederlands (nl-NL)"
+
+msgctxt "#32167"
+msgid "Polski (pl-PL)"
+msgstr "Polski (pl-PL)"
+
+msgctxt "#32168"
+msgid "Türkçe (tr-TR)"
+msgstr "Türkçe (tr-TR)"

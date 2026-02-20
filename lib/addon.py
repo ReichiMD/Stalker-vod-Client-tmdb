@@ -1121,6 +1121,14 @@ class StalkerAddon:
         if not xbmcvfs.exists(cache_path):
             xbmcgui.Dialog().ok('TMDB-Cache', 'Kein Cache vorhanden – nichts zu löschen.')
             return
+        confirmed = xbmcgui.Dialog().yesno(
+            'TMDB-Cache löschen',
+            'Soll der TMDB-Cache wirklich gelöscht werden?[CR][CR]'
+            'Beim nächsten Öffnen eines Ordners werden alle TMDB-Daten '
+            '(Poster, Beschreibungen, Bewertungen) neu heruntergeladen.'
+        )
+        if not confirmed:
+            return
         if xbmcvfs.delete(cache_path):
             xbmcgui.Dialog().ok(
                 'TMDB-Cache gelöscht',

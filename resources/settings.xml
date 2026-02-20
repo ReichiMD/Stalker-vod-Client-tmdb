@@ -141,6 +141,7 @@
             <group id="data_management" label="32112">
                 <setting id="refresh_all_data" type="action" label="32110" help="32111">
                     <level>0</level>
+                    <close>true</close>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=refresh_all)</data>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -150,6 +151,7 @@
 
                 <setting id="update_new_data" type="action" label="32135" help="32136">
                     <level>0</level>
+                    <close>true</close>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data)</data>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -171,56 +173,94 @@
 
                 <setting id="tmdb_api_key" type="string" label="32104" help="32105">
                     <level>0</level>
-                    <enable>eq(-1,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
-                    <control type="edit" format="string" hidden="true" />
+                    <control type="edit" format="string" />
                 </setting>
 
                 <setting id="tmdb_language" type="string" label="32106" help="32107">
                     <level>0</level>
-                    <enable>eq(-2,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <default>de-DE</default>
                     <constraints>
-                        <allowempty>false</allowempty>
+                        <options>
+                            <option label="32160">de-DE</option>
+                            <option label="32161">en-US</option>
+                            <option label="32162">en-GB</option>
+                            <option label="32163">fr-FR</option>
+                            <option label="32164">it-IT</option>
+                            <option label="32165">es-ES</option>
+                            <option label="32166">nl-NL</option>
+                            <option label="32167">pl-PL</option>
+                            <option label="32168">tr-TR</option>
+                        </options>
                     </constraints>
-                    <control type="edit" format="string" />
+                    <control type="spinner" format="string" />
                 </setting>
             </group>
 
             <group id="tmdb_fields_group" label="32146">
                 <setting id="tmdb_use_poster" type="boolean" label="32147" help="32148">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
 
                 <setting id="tmdb_use_fanart" type="boolean" label="32149" help="32150">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
 
                 <setting id="tmdb_use_plot" type="boolean" label="32151" help="32152">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
 
                 <setting id="tmdb_use_rating" type="boolean" label="32153" help="32154">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
 
                 <setting id="tmdb_use_genres" type="boolean" label="32155" help="32156">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
@@ -229,7 +269,11 @@
             <group id="tmdb_cache_group" label="32137">
                 <setting id="tmdb_cache_days" type="integer" label="32138" help="32139">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <default>30</default>
                     <constraints>
                         <options>
@@ -243,7 +287,11 @@
 
                 <setting id="tmdb_show_cache_info" type="action" label="32140" help="32141">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_cache_info)</data>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -253,7 +301,12 @@
 
                 <setting id="tmdb_refresh_now" type="action" label="32142" help="32143">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <close>true</close>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_refresh_now)</data>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -263,7 +316,11 @@
 
                 <setting id="tmdb_clear_cache" type="action" label="32144" help="32145">
                     <level>0</level>
-                    <enable>eq(tmdb_enabled,true)</enable>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_clear_cache)</data>
                     <constraints>
                         <allowempty>true</allowempty>

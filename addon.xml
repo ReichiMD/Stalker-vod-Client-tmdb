@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.3" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.4" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,27 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.4  (2026-02-20)
+- Improvement: Language selection in the TMDB tab is now a dropdown instead
+  of a free-text field. 9 languages available: Deutsch (de-DE), English USA
+  (en-US), English UK (en-GB), Français (fr-FR), Italiano (it-IT),
+  Español (es-ES), Nederlands (nl-NL), Polski (pl-PL), Türkçe (tr-TR).
+  Default remains de-DE.
+- Improvement: "Refresh all data", "Add new content only" and "Update TMDB
+  metadata" now close the settings dialog automatically before showing the
+  progress bar. Previously the settings dialog stayed open behind the progress
+  bar which looked confusing.
+- Improvement: "Delete TMDB cache" now shows a Yes/No confirmation dialog
+  before deleting. Prevents accidental deletion.
+- Fix: All TMDB sub-settings (API key, language, poster/fanart/plot/rating/
+  genre toggles, cache validity, cache buttons) are now correctly greyed out
+  when "Enable TMDB Metadata" is turned off. Updated to the correct Kodi 21
+  &lt;dependencies&gt; syntax. Previously used the old eq(-1,true) offset
+  syntax which is fragile when settings are reordered.
+- New: KODI_SETTINGS_REFERENCE.md – internal developer reference with
+  verified correct syntax for all settings.xml control types in Kodi 21.
+  Prevents regressions from using outdated syntax.
+
 v0.2.3  (2026-02-20)
 - Improvement: TMDB API key is now masked in the settings list (shown as
   asterisks). The keyboard during editing remains normal.
