@@ -601,10 +601,186 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Idee | Aufwand | Effekt |
 |---|---|---|
-| FSK-Altersfreigaben (2. API-Abruf) | mittel | Settings-Gruppe "Erweiterte Daten" bereits vorbereitet; braucht `/movie/{id}/release_dates`; verdoppelt Sync-Zeit |
-| Kombinations-Filter Custom-Window | groß | `xbmcgui.WindowXMLDialog` mit eigenem XML-Layout statt sequenzieller Dialoge |
 | Auth-Singleton (wie TMDB-Singleton) | klein | token.json wird aktuell pro API-Call neu gelesen – einmal pro Prozess reicht |
-| `fanart`/`votes` weglassen (optional per Setting) | mittel | weniger Kodi-Bandbreite |
-| Timeout für TMDB-Calls kürzen (aktuell 10s → 3s) | klein | hängt nicht 10s bei Offline-TMDB |
-| FSK-Altersfreigaben (zweiter API-Call pro Film nötig) | mittel | verdoppelt Ladezeit bei leerem Cache |
 | Parallele TMDB-Requests beim Refresh (Threading) | groß | Refresh deutlich schneller (statt sequenziell) |
+
+---
+
+## Geplante Phasen: Filter-Erweiterungen
+
+### Phase 1: Basis-Filter (Genre / Jahr / Bewertung) — FERTIG (v0.2.8)
+
+**Status:** Umgesetzt und im Branch `claude/brainstorm-filter-options-fSBXE`.
+
+- "VOD FILTER" / "SERIES FILTER" Buttons in den Ordner-Ansichten
+- Filtert nach Genre (Multiselect), Jahr/Dekade, Mindestbewertung
+- Kombinations-Filter "Alle Kriterien" (UND-Logik)
+- Arbeitet nur mit vorhandenen TMDB-Cache-Daten (kein Extra-API-Call)
+- Settings-Gruppe "Erweiterte Daten (2. Abruf)" im TMDB-Tab vorbereitet
+
+---
+
+### Phase 2: FSK-Altersfreigaben (2. API-Abruf) — GEPLANT
+
+**Ziel:** FSK-Daten (z.B. FSK 0, FSK 6, FSK 12, FSK 16, FSK 18) von TMDB holen
+und als 4. Filter-Kriterium anbieten.
+
+**Warum ein 2. API-Abruf nötig ist:**
+Der Such-Endpunkt `/search/movie` liefert **keine** Altersfreigaben.
+Man braucht einen Detail-Endpunkt pro Film:
+```
+GET /movie/{tmdb_id}?append_to_response=release_dates&api_key=...
+```
+Für TV-Serien:
+```
+GET /tv/{tmdb_id}/content_ratings?api_key=...
+```
+
+**Ablauf beim Sync (wenn FSK aktiviert):**
+1. `/search/movie` → TMDB-ID holen (wie bisher, 1. Abruf)
+2. `/movie/{tmdb_id}?append_to_response=release_dates` → FSK aus `release_dates` extrahieren
+3. Im `release_dates`-Array nach dem Land "DE" suchen → Feld `certification` lesen
+4. Falls kein DE-Eintrag: Fallback auf "US" (MPAA Rating)
+5. Ergebnis im TMDB-Cache speichern als neues Feld `certification`
+
+**Parsing der TMDB-Antwort (release_dates):**
+```python
+# Antwort von /movie/{id}?append_to_response=release_dates
+{
+    "release_dates": {
+        "results": [
+            {
+                "iso_3166_1": "DE",
+                "release_dates": [
+                    {"certification": "12", "type": 3}  # type 3 = Theatrical
+                ]
+            }
+        ]
+    }
+}
+# → certification = "12" → im Cache als "FSK 12" speichern
+```
+
+**Neue Dateien / Änderungen:**
+
+| Datei | Änderung |
+|---|---|
+| `lib/tmdb.py` | Neue Methode `get_movie_certification(tmdb_id)` und `get_tv_certification(tmdb_id)`. Neues Feld `certification` im Cache-Dict. |
+| `lib/tmdb.py` | `__parse_movie()` / `__parse_tv()` um `certification` erweitern (nur wenn 2. Abruf aktiv) |
+| `lib/addon.py` | `__collect_filter_data()` sammelt auch `certification`-Werte |
+| `lib/addon.py` | `__ask_fsk_filter()` – neuer Dialog: `select()` mit FSK-Stufen (0, 6, 12, 16, 18) |
+| `lib/addon.py` | `__apply_filters()` bekommt 4. Parameter `max_fsk` |
+| `lib/addon.py` | `__run_filter()` – FSK als 4. Option im Hauptmenü + im Kombinations-Filter |
+| `lib/addon.py` | `__refresh_all_data()` und `__tmdb_refresh_now()` → 2. API-Call wenn Setting aktiv |
+| `lib/globals.py` | `TmdbConfig` bekommt `use_certification: bool = False` |
+| `resources/settings.xml` | Toggle "FSK-Altersfreigabe laden" in Gruppe "Erweiterte Daten" |
+| `strings.po` (en+de) | Strings für FSK-Toggle, FSK-Filter-Dialog, FSK-Stufen |
+
+**Settings-Toggle:**
+```xml
+<!-- In Gruppe "Erweiterte Daten (2. Abruf pro Film)" -->
+<setting id="tmdb_use_certification" type="boolean" label="32183" help="32184">
+    <level>0</level>
+    <dependencies>
+        <dependency type="enable">
+            <condition operator="is" setting="tmdb_enabled">true</condition>
+        </dependency>
+    </dependencies>
+    <default>false</default>
+    <control type="toggle" />
+</setting>
+```
+
+**Performance-Auswirkung:**
+- Pro Film: ~300ms zusätzlich (2. HTTP-Request)
+- Bei 2000 Filmen: ~10 Minuten extra beim ersten Sync
+- Bereits gecachte Filme werden übersprungen (Cache-Key mit `tmdb_id`)
+- Rate-Limiting greift wie gehabt (35 req/10s)
+
+**Filter-Dialog mit FSK (Kombination):**
+```
+Filtern nach:
+  → Genre
+  → Jahr / Jahrzehnt
+  → Mindestbewertung
+  → FSK-Altersfreigabe          ← NEU
+  → Alle Kriterien (Kombination)
+```
+Bei "Alle Kriterien": Genre → Jahr → Bewertung → FSK (4 Schritte).
+
+**FSK-Auswahl-Dialog:**
+```
+Maximale Altersfreigabe:
+  → FSK 0  (Alle Altersstufen)
+  → FSK 6  (Ab 6 Jahren)
+  → FSK 12 (Ab 12 Jahren)
+  → FSK 16 (Ab 16 Jahren)
+  → FSK 18 (Keine Jugendfreigabe)
+  → Alle anzeigen
+```
+Logik: Film wird angezeigt wenn seine FSK ≤ gewählter Wert.
+Beispiel: "FSK 12" → zeigt FSK 0, FSK 6 und FSK 12, aber nicht FSK 16/18.
+
+**Offene Fragen für Phase 2:**
+- Soll FSK beim normalen Browsen angezeigt werden (z.B. im Info-Dialog)?
+- Soll es einen separaten "FSK nachladen"-Button geben (wie "TMDB-Metadaten aktualisieren")?
+  → Empfehlung: Ja, Option B – nur nachladen wenn User explizit will
+- Fallback wenn kein DE-Rating: US-Rating (MPAA) umrechnen? Oder leer lassen?
+
+---
+
+### Phase 3: Verbessertes Filter-UI (Custom Window) — IDEE
+
+**Ziel:** Statt sequenzieller Dialoge ein einziges Filter-Fenster mit allen Kriterien gleichzeitig.
+
+**Aktuell (Phase 1):**
+```
+Dialog 1: "Filtern nach?" → Genre / Jahr / Rating / Kombination
+Dialog 2: Genre-Auswahl (Multiselect)
+Dialog 3: Jahr-Auswahl
+Dialog 4: Rating-Auswahl
+→ Ergebnis
+```
+= Bis zu 4 Klicks bis zum Ergebnis.
+
+**Ziel (Phase 3):**
+```
+┌─── Film-Filter ────────────────────────┐
+│                                         │
+│  Genre:      [Action, Thriller    ▾]   │
+│  Jahr:       [2020 – 2029         ▾]   │
+│  Bewertung:  [7+ (Gut)            ▾]   │
+│  FSK:        [FSK 12              ▾]   │
+│                                         │
+│       [Anwenden]    [Zurücksetzen]      │
+└─────────────────────────────────────────┘
+```
+= 1 Fenster, alles auf einen Blick, 1 Klick "Anwenden".
+
+**Technisch:**
+- `xbmcgui.WindowXMLDialog` mit eigenem XML-Layout
+- XML-Datei: `resources/skins/Default/1080i/filter_dialog.xml`
+- Braucht Custom-Controls: Buttons, Labels, Spinner/Listen
+- Kodi-Skin-abhängig – muss mit Default-Skin (Estuary) funktionieren
+- Deutlich aufwändiger als die Kodi-Standard-Dialoge
+
+**Aufwand:** Groß (eigenes XML-Layout + Python-Controller-Klasse).
+**Priorität:** Niedrig – die sequenziellen Dialoge funktionieren gut genug.
+**Alternative:** Phase 1 weiter verbessern (z.B. letzten Filter merken, Zurück-Button).
+
+---
+
+### Übersicht: Was ist wo vorbereitet?
+
+| Was | Wo | Status |
+|---|---|---|
+| Filter-Button in Ordner-Ansicht | `lib/addon.py` Zeile ~292, ~328 | Fertig |
+| Filter-Logik (Genre/Jahr/Rating) | `lib/addon.py` `__run_filter()` etc. | Fertig |
+| Cache-Only-Lookup | `lib/tmdb.py` `get_cached_movie_info()` / `get_cached_tv_info()` | Fertig |
+| Settings: "Basis-Daten" Gruppe | `resources/settings.xml` group `tmdb_fields_group` | Fertig |
+| Settings: "Erweiterte Daten" Gruppe | `resources/settings.xml` group `tmdb_extended_group` | Leer (nur Info-Text) |
+| String-IDs bis 32182 | `strings.po` (en + de) | Belegt |
+| Nächste freie String-ID | 32183 | Reserviert für FSK-Toggle (Phase 2) |
+| `TmdbConfig.use_certification` | `lib/globals.py` | Noch nicht angelegt |
+| TMDB Detail-API-Call | `lib/tmdb.py` | Noch nicht implementiert |
+| FSK im Filter-Dialog | `lib/addon.py` | Noch nicht implementiert |
