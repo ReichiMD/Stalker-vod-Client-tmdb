@@ -545,7 +545,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 - Branch: `claude/disable-auto-fetch-startup-rrG00`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.9.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.0.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -553,6 +553,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Stalker-API Retry + Pause | `claude/disable-auto-fetch-startup-rrG00` | Portal-Requests mit try/except + Retry (3 Versuche, exp. Backoff). 100ms Pause zwischen Seiten in get_listing(). Verhindert stilles Überspringen von Kategorien bei Netzwerkproblemen. |
 | Auto-Fetch Erststart deaktiviert | `claude/disable-auto-fetch-startup-rrG00` | Automatischer Datenabruf beim ersten Start entfernt. Nutzer soll zuerst Ordner-Filter konfigurieren. |
 | Portal-Cache-Verwaltung | `claude/disable-auto-fetch-startup-rrG00` | Neue Gruppe "Portal-Cache" in Portal Einstellung mit Buttons "Cache-Info anzeigen" und "Portal-Cache löschen" (analog TMDB-Cache). |
 | Bildschirmschoner-Schutz | `claude/disable-auto-fetch-startup-rrG00` | InhibitScreensaver(true) während Refresh/Update-Operationen. Verhindert Abbruch durch Nvidia Shield Bildschirmschoner. |

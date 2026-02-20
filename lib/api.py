@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import json
 import math
+import time
 import requests
 from .globals import G
 from .auth import Auth
@@ -34,15 +35,25 @@ class Api:
         while True:
             token = auth.get_token(retries > 0)
             Logger.debug("Calling Stalker portal {} with params {}".format(url, json.dumps(params)))
-            response = requests.get(url=url,
-                                    headers={'Cookie': mac_cookie,
-                                             'SN': G.portal_config.serial_number,
-                                             'Authorization': 'Bearer ' + token,
-                                             'X-User-Agent': 'Model: MAG250; Link: WiFi', 'Referrer': referrer,
-                                             'User-Agent': 'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3'},
-                                    params=params,
-                                    timeout=30
-                                    )
+            try:
+                response = requests.get(url=url,
+                                        headers={'Cookie': mac_cookie,
+                                                 'SN': G.portal_config.serial_number,
+                                                 'Authorization': 'Bearer ' + token,
+                                                 'X-User-Agent': 'Model: MAG250; Link: WiFi', 'Referrer': referrer,
+                                                 'User-Agent': 'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3'},
+                                        params=params,
+                                        timeout=30
+                                        )
+            except requests.exceptions.RequestException as exc:
+                if retries >= G.addon_config.max_retries:
+                    Logger.error('Portal nicht erreichbar nach {} Versuchen: {}'.format(retries + 1, exc))
+                    raise
+                retries += 1
+                wait = min(2 ** retries, 10)
+                Logger.warn('Portal-Anfrage fehlgeschlagen (Versuch {}): {}. Warte {}s...'.format(retries, exc, wait))
+                time.sleep(wait)
+                continue
             if response.text.find('Authorization failed') == -1 or retries == G.addon_config.max_retries:
                 break
             if retries > 1:
@@ -168,6 +179,7 @@ class Api:
         total_pages = int(math.ceil(float(total_items) / float(max_page_items)))
         for page_no in range(int(page) + 1, min(int(page) + G.addon_config.max_page_limit, total_pages + 1)):
             params.update({'p': str(page_no)})
+            time.sleep(0.1)
             response = Api.__call_stalker_portal(params)['js']
             videos += response['data']
         return {'max_page_items': max_page_items, 'total_items': total_items, 'data': videos}

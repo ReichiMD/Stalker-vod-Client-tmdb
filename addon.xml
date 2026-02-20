@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.9" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.0" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,16 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.0  (2026-02-20)
+- Fix: Portal-API robuster bei Netzwerkproblemen. requests.get() wird jetzt
+  mit try/except abgesichert. Bei ConnectionError oder Timeout wird bis zu
+  3x mit exponentieller Wartezeit (2s, 4s, 8s) wiederholt statt sofort
+  abzubrechen. Vorher konnte ein einzelner Netzwerkfehler eine komplette
+  Kategorie beim Daten-Refresh still überspringen.
+- Fix: Kleine Pause (100ms) zwischen Seiten-Abrufen in get_listing().
+  Verhindert dass der Stalker-Server bei grossen Kategorien (500+ Filme,
+  25+ Seiten) mit zu vielen Requests in Folge überflutet wird.
+
 v0.2.9  (2026-02-20)
 - Removed: Automatic data fetch on first startup is now disabled. The user
   should configure folder filters first before loading data. The "Refresh
