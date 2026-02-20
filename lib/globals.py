@@ -60,6 +60,13 @@ class FilterConfig:
     keywords: list = dataclasses.field(default_factory=list)
 
 
+@dataclasses.dataclass
+class DisplayConfig:
+    """Display settings for name cleaning"""
+    remove_lang_tags: bool = True
+    lang_tag_keywords: list = dataclasses.field(default_factory=list)
+
+
 class GlobalVariables:
     """Class initializes global settings used by the plugin"""
 
@@ -71,6 +78,7 @@ class GlobalVariables:
         self.portal_config = PortalConfig()
         self.tmdb_config = TmdbConfig()
         self.filter_config = FilterConfig()
+        self.display_config = DisplayConfig()
 
     def init_globals(self):
         """Init global settings"""
@@ -137,6 +145,13 @@ class GlobalVariables:
         self.filter_config.use_manual = (filter_mode == 2)
         kw_raw = self.__addon.getSetting('folder_filter_keywords') or ''
         self.filter_config.keywords = [k.strip().lower() for k in kw_raw.split(',') if k.strip()]
+
+        # Display settings – language tag removal
+        self.display_config.remove_lang_tags = self.__addon.getSetting('remove_lang_tags') != 'false'
+        lang_kw_raw = self.__addon.getSetting('remove_lang_keywords')
+        if not lang_kw_raw:
+            lang_kw_raw = 'de, en, nl, fr, it, es, pl, tr, ru, pt, ar, multi, deutsch, german'
+        self.display_config.lang_tag_keywords = [k.strip().lower() for k in lang_kw_raw.split(',') if k.strip()]
 
     def get_handle(self):
         """Get addon handle"""

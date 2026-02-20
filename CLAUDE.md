@@ -460,6 +460,19 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 > `globals.py` wandelt den Integer in die bestehenden `FilterConfig.use_keywords`/`use_manual`
 > Booleans um → der Rest des Codes bleibt unverändert.
 
+**Gruppe: Anzeige**
+
+| Setting-ID | Typ | Standard | Bedeutung |
+|---|---|---|---|
+| `remove_lang_tags` | boolean | `true` | Sprachkürzel aus Ordner-/Filmnamen entfernen |
+| `remove_lang_keywords` | string | `de, en, nl, fr, it, es, pl, tr, ru, pt, ar, multi, deutsch, german` | Kommagetrennte Kürzel die entfernt werden (nur aktiv bei Toggle=an) |
+
+> **Zwei Muster werden erkannt:**
+> - Präfix: `de - Action` → `Action` (Sprachcode + Bindestrich am Anfang)
+> - Suffix: `Hulk (DE)` oder `Hulk [DE]` oder `Hulk - DE` → `Hulk` (Sprachcode am Ende)
+> Groß-/Kleinschreibung wird ignoriert. Wenn nach dem Entfernen ein leerer String übrig bleibt,
+> wird der Original-Name beibehalten. Verbessert auch TMDB-Trefferquote.
+
 **Gruppe: Daten laden**
 
 | Setting-ID | Typ | Standard | Bedeutung |
@@ -489,9 +502,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/analyze-tmdb-settings-Jzezc`
+- Branch: `claude/remove-language-suffix-wWT0N`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.6.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.7.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -499,6 +512,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Sprachkürzel entfernen | `claude/remove-language-suffix-wWT0N` | Entfernt Sprachkürzel wie "de - " (Präfix) und "(DE)" (Suffix) aus Ordner- und Filmnamen. Standardmäßig aktiv. Konfigurierbar per Setting: Toggle + Freitextfeld für Keywords. Verbessert auch TMDB-Trefferquote (sucht "Hulk" statt "Hulk (DE)"). |
 | Tab-Umbau: 4→3 Tabs | `claude/analyze-tmdb-settings-Jzezc` | "Portal" → "Portal Login", "Ordner-Filter" → "Portal Einstellung", Cache-Tab aufgelöst und in Portal Einstellung integriert. 3 Gruppen: Ordner-Filter, Daten laden, Daten aktualisieren. |
 | Filter-Modus als Dropdown | `claude/analyze-tmdb-settings-Jzezc` | Zwei Toggles (`folder_filter_use_keywords` + `folder_filter_use_manual`) durch ein Dropdown `folder_filter_mode` ersetzt (0=Alle, 1=Stichwort, 2=Manuell). Unmöglich beide gleichzeitig zu aktivieren. Dependencies grauen irrelevante Settings aus. globals.py wandelt Integer in bestehende Booleans um → addon.py unverändert. |
 | load_all_pages nur bei Cache | `claude/analyze-tmdb-settings-Jzezc` | "Alle Seiten auf einmal laden" ist jetzt ausgegraut wenn "Lokalen Cache verwenden" aus ist. Dependency: `cache_enabled==true`. |
