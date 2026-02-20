@@ -379,3 +379,15 @@ msgstr "Tags to remove (comma-separated)"
 msgctxt "#32179"
 msgid "Comma-separated language codes or words to remove from names. Example: de, en, nl, deutsch, german, multi"
 msgstr "Comma-separated language codes or words to remove from names. Example: de, en, nl, deutsch, german, multi"
+
+msgctxt "#32180"
+msgid "Basic data (1 request per film)"
+msgstr "Basic data (1 request per film)"
+
+msgctxt "#32181"
+msgid "Extended data (2nd request per film)"
+msgstr "Extended data (2nd request per film)"
+
+msgctxt "#32182"
+msgid "Extended data requires an additional API request per film, which doubles the loading time during synchronization. Options will be available in a future version (e.g. FSK age ratings)."
+msgstr "Extended data requires an additional API request per film, which doubles the loading time during synchronization. Options will be available in a future version (e.g. FSK age ratings)."

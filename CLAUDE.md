@@ -340,6 +340,49 @@ Ordner-Filter in den Einstellungen. Die Suche soll einfach "über alles Sichtbar
 
 ---
 
+## Filter-Funktion (Genre / Jahr / Bewertung)
+
+### Übersicht
+"VOD FILTER" und "SERIES FILTER" Buttons in der Ordner-Ansicht (neben SEARCH).
+Filtern komplett auf Basis von TMDB-Cache-Daten – **kein einziger zusätzlicher API-Call**.
+
+### Voraussetzungen
+- TMDB aktiviert + API-Key vorhanden
+- TMDB-Daten wurden synchronisiert (mindestens einmal "Alle Daten aktualisieren")
+- Button erscheint nur wenn TMDB aktiviert ist
+
+### Verfügbare Filter-Kriterien (Phase 1 – aus 1. API-Abruf)
+
+| Kriterium | Dialog-Typ | Logik |
+|---|---|---|
+| Genre | `multiselect()` | Film hat mindestens EIN gewähltes Genre |
+| Jahr/Dekade | `select()` (Dekaden) | Film fällt in gewählten Zeitraum |
+| Mindestbewertung | `select()` (9+, 8+, 7+, 6+, 5+) | Film hat mindestens X Sterne |
+
+### Kombinations-Filter ("Alle Kriterien")
+Alle drei Filter werden nacheinander abgefragt und mit **UND-Logik** verknüpft.
+Beispiel: Genre=Action + Jahr=2020-2029 + Rating=7+ → zeigt nur gute aktuelle Action-Filme.
+
+### Technischer Ablauf
+1. Alle Videos aus Stalker-Cache laden (alle sichtbaren Kategorien)
+2. Für jedes Video: TMDB-Cache-Lookup via `get_cached_movie_info()` / `get_cached_tv_info()`
+3. Einzigartige Genres/Jahre/Ratings sammeln
+4. Filter-Dialog(e) anzeigen
+5. Videos filtern, Ergebnis als flache Liste anzeigen (wie Suche)
+
+### Implementiert in
+- `lib/tmdb.py`: `get_cached_movie_info()`, `get_cached_tv_info()` (Cache-only, kein API-Call)
+- `lib/addon.py`: `__vod_filter()`, `__series_filter()`, `__run_filter()`,
+  `__collect_filter_data()`, `__ask_genre_filter()`, `__ask_year_filter()`,
+  `__ask_rating_filter()`, `__apply_filters()`, `__build_filter_desc()`
+
+### Phase 2 (geplant): Erweiterte Daten vom 2. API-Abruf
+- FSK-Altersfreigaben via `/movie/{id}/release_dates` (verdoppelt Sync-Zeit)
+- Settings-Gruppe "Erweiterte Daten (2. Abruf pro Film)" im TMDB-Tab bereits vorbereitet
+- Filter-Dialog würde dann FSK als 4. Kriterium hinzufügen
+
+---
+
 ## Ersteinrichtungs-Dialog (wie Stalker PVR)
 
 ### Ablauf
@@ -502,9 +545,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/remove-language-suffix-wWT0N`
+- Branch: `claude/brainstorm-filter-options-fSBXE`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.7.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.8.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -512,6 +555,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| VOD/Series-Filter | `claude/brainstorm-filter-options-fSBXE` | Neuer "FILTER"-Button in der VOD/Series-Ordneransicht (neben SEARCH). Filtert nach Genre (Multiselect), Jahr/Dekade oder Mindestbewertung. Kombinationsfilter: Genre + Jahr + Bewertung gleichzeitig mit UND-Logik. Arbeitet nur mit TMDB-Cache-Daten (0 Extra-API-Calls). TMDB-Settings umstrukturiert in "Basis-Daten (1 Abruf)" und "Erweiterte Daten (2. Abruf)" als Vorbereitung für FSK. |
 | Sprachkürzel entfernen | `claude/remove-language-suffix-wWT0N` | Entfernt Sprachkürzel wie "de - " (Präfix) und "(DE)" (Suffix) aus Ordner- und Filmnamen. Standardmäßig aktiv. Konfigurierbar per Setting: Toggle + Freitextfeld für Keywords. Verbessert auch TMDB-Trefferquote (sucht "Hulk" statt "Hulk (DE)"). |
 | Tab-Umbau: 4→3 Tabs | `claude/analyze-tmdb-settings-Jzezc` | "Portal" → "Portal Login", "Ordner-Filter" → "Portal Einstellung", Cache-Tab aufgelöst und in Portal Einstellung integriert. 3 Gruppen: Ordner-Filter, Daten laden, Daten aktualisieren. |
 | Filter-Modus als Dropdown | `claude/analyze-tmdb-settings-Jzezc` | Zwei Toggles (`folder_filter_use_keywords` + `folder_filter_use_manual`) durch ein Dropdown `folder_filter_mode` ersetzt (0=Alle, 1=Stichwort, 2=Manuell). Unmöglich beide gleichzeitig zu aktivieren. Dependencies grauen irrelevante Settings aus. globals.py wandelt Integer in bestehende Booleans um → addon.py unverändert. |
@@ -557,6 +601,8 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Idee | Aufwand | Effekt |
 |---|---|---|
+| FSK-Altersfreigaben (2. API-Abruf) | mittel | Settings-Gruppe "Erweiterte Daten" bereits vorbereitet; braucht `/movie/{id}/release_dates`; verdoppelt Sync-Zeit |
+| Kombinations-Filter Custom-Window | groß | `xbmcgui.WindowXMLDialog` mit eigenem XML-Layout statt sequenzieller Dialoge |
 | Auth-Singleton (wie TMDB-Singleton) | klein | token.json wird aktuell pro API-Call neu gelesen – einmal pro Prozess reicht |
 | `fanart`/`votes` weglassen (optional per Setting) | mittel | weniger Kodi-Bandbreite |
 | Timeout für TMDB-Calls kürzen (aktuell 10s → 3s) | klein | hängt nicht 10s bei Offline-TMDB |

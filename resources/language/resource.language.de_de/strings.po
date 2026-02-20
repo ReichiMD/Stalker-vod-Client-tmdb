@@ -379,3 +379,15 @@ msgstr "Zu entfernende Kürzel (kommagetrennt)"
 msgctxt "#32179"
 msgid "Comma-separated language codes or words to remove from names. Example: de, en, nl, deutsch, german, multi"
 msgstr "Kommagetrennte Sprachcodes oder Wörter die aus Namen entfernt werden. Beispiel: de, en, nl, deutsch, german, multi"
+
+msgctxt "#32180"
+msgid "Basic data (1 request per film)"
+msgstr "Basis-Daten (1 Abruf pro Film)"
+
+msgctxt "#32181"
+msgid "Extended data (2nd request per film)"
+msgstr "Erweiterte Daten (2. Abruf pro Film)"
+
+msgctxt "#32182"
+msgid "Extended data requires an additional API request per film, which doubles the loading time during synchronization. Options will be available in a future version (e.g. FSK age ratings)."
+msgstr "Erweiterte Daten benötigen einen zusätzlichen API-Abruf pro Film, was die Ladezeit beim Synchronisieren verdoppelt. Optionen werden in einer zukünftigen Version verfügbar sein (z.B. FSK-Altersfreigaben)."

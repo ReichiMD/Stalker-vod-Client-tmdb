@@ -253,7 +253,7 @@
                 </setting>
             </group>
 
-            <group id="tmdb_fields_group" label="32146">
+            <group id="tmdb_fields_group" label="32180">
                 <setting id="tmdb_use_poster" type="boolean" label="32147" help="32148">
                     <level>0</level>
                     <dependencies>
@@ -308,6 +308,10 @@
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
+            </group>
+
+            <group id="tmdb_extended_group" label="32181">
+                <setting type="lsep" label="32182" />
             </group>
 
             <group id="tmdb_cache_group" label="32137">
