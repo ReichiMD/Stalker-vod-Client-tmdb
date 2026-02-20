@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.5" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.6" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,18 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.6  (2026-02-20)
+- Redesign: Settings reduced from 4 tabs to 3 tabs. "Portal" renamed to
+  "Portal Login". "Folder Filter" renamed to "Portal Settings" and now
+  contains filter settings, cache settings and data refresh buttons.
+  Separate "Cache" tab removed.
+- Improvement: Folder filter mode is now a single dropdown (Show all /
+  Keyword filter / Manual selection) instead of two toggles. Makes it
+  impossible to enable both modes at the same time. Irrelevant settings
+  are greyed out based on selected mode.
+- Improvement: "Load all pages at once" is now greyed out when local
+  cache is turned off (since it depends on the cache).
+
 v0.2.5  (2026-02-20)
 - Fix: API-Key wird jetzt mit Sternchen (****) maskiert in den Einstellungen.
   Korrekte Kodi-21-Syntax: &lt;hidden&gt;true&lt;/hidden&gt; als Kind-Element

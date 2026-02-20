@@ -128,8 +128,13 @@ class GlobalVariables:
         self.tmdb_config.use_genres  = self.__addon.getSetting('tmdb_use_genres')  != 'false'
 
         # Init Folder Filter settings
-        self.filter_config.use_keywords = self.__addon.getSetting('folder_filter_use_keywords') == 'true'
-        self.filter_config.use_manual = self.__addon.getSetting('folder_filter_use_manual') == 'true'
+        # folder_filter_mode: 0=show all, 1=keyword filter, 2=manual selection
+        try:
+            filter_mode = int(self.__addon.getSetting('folder_filter_mode') or '0')
+        except (ValueError, TypeError):
+            filter_mode = 0
+        self.filter_config.use_keywords = (filter_mode == 1)
+        self.filter_config.use_manual = (filter_mode == 2)
         kw_raw = self.__addon.getSetting('folder_filter_keywords') or ''
         self.filter_config.keywords = [k.strip().lower() for k in kw_raw.split(',') if k.strip()]
 

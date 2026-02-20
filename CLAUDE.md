@@ -426,10 +426,12 @@ plugin.video.stalkervod.tmdb/
 
 ## Einstellungen (settings.xml)
 
-Die `settings.xml` hat **vier `<section>`-Blöcke** mit der gleichen `id="plugin.video.stalkervod.tmdb"` –
+Die `settings.xml` hat **drei `<section>`-Blöcke** mit der gleichen `id="plugin.video.stalkervod.tmdb"` –
 das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
-### Portal-Tab
+### Tab 1: Portal Login
+Reine Anmeldedaten für den Stalker-Server.
+
 | Setting-ID | Typ | Bedeutung |
 |---|---|---|
 | `server_address` | string | Stalker-Server-URL |
@@ -440,35 +442,48 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 | `device_id_2` | string | Geräte-ID 2 |
 | `signature` | string | Signatur |
 
-### Ordner-Filter-Tab
-| Setting-ID | Typ | Bedeutung |
-|---|---|---|
-| `folder_filter_use_keywords` | boolean | Stichwörter-Filter aktiv |
-| `folder_filter_use_manual` | boolean | Manuelle Auswahl aktiv (hat Vorrang) |
-| `folder_filter_keywords` | string | Kommagetrennte Stichwörter |
-| `folder_filter_select_vod` | boolean | Toggle → öffnet VOD-Auswahldialog |
-| `folder_filter_select_series` | boolean | Toggle → öffnet Serien-Auswahldialog |
-| `folder_filter_select_tv` | boolean | Toggle → öffnet TV-Auswahldialog |
+### Tab 2: Portal Einstellung
+Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
-### Cache-Tab ← NEU
+**Gruppe: Ordner-Filter**
+
+| Setting-ID | Typ | Standard | Bedeutung |
+|---|---|---|---|
+| `folder_filter_mode` | integer (Dropdown) | `0` | 0=Alle anzeigen, 1=Stichwort-Filter, 2=Manuelle Auswahl |
+| `folder_filter_keywords` | string | `de, deutsch, german, multi` | Kommagetrennte Stichwörter (nur aktiv bei Modus=1) |
+| `folder_filter_select_vod` | action | – | VOD-Ordner auswählen (nur aktiv bei Modus=2) |
+| `folder_filter_select_series` | action | – | Serien-Ordner auswählen (nur aktiv bei Modus=2) |
+| `folder_filter_select_tv` | action | – | TV-Genres auswählen (nur aktiv bei Modus=2) |
+
+> **Filter-Modus als Dropdown:** Ersetzt die alten zwei Toggles (`folder_filter_use_keywords` +
+> `folder_filter_use_manual`). Ein Dropdown macht es unmöglich beide gleichzeitig zu aktivieren.
+> `globals.py` wandelt den Integer in die bestehenden `FilterConfig.use_keywords`/`use_manual`
+> Booleans um → der Rest des Codes bleibt unverändert.
+
+**Gruppe: Daten laden**
+
 | Setting-ID | Typ | Standard | Bedeutung |
 |---|---|---|---|
 | `cache_enabled` | boolean | `true` | Lokalen Cache verwenden (aus = immer Server) |
-| `load_all_pages` | boolean | `false` | Alle Seiten auf einmal statt paginiert |
-| `refresh_all_data` | **boolean** (kein action!) | `false` | Alles löschen + komplett neu laden |
-| `update_new_data` | **boolean** (kein action!) | `false` | Nur neue Inhalte zum Cache hinzufügen |
+| `load_all_pages` | boolean | `false` | Alle Seiten auf einmal statt paginiert (nur aktiv bei Cache=an) |
 
-### TMDB-Tab
+**Gruppe: Daten aktualisieren**
+
+| Setting-ID | Typ | Bedeutung |
+|---|---|---|
+| `refresh_all_data` | action | Alles löschen + komplett neu laden |
+| `update_new_data` | action | Nur neue Inhalte zum Cache hinzufügen |
+
+### Tab 3: TMDB
 | Setting-ID | Typ | Bedeutung |
 |---|---|---|
 | `tmdb_enabled` | boolean | TMDB-Anreicherung ein/aus |
 | `tmdb_api_key` | string (hidden) | Kostenloser Key von themoviedb.org |
 | `tmdb_language` | string | Sprach-Code für Metadaten, default `de-DE` |
 
-> **Wichtig:** Alle Schalter die wie Buttons wirken (`refresh_all_data`, `update_new_data`,
-> `folder_filter_select_*`) sind bewusst `type="boolean"`. Hintergrund: `type="action"` mit
-> `<action>`-Child funktioniert in Kodi 21 nicht (→ Regel 1 oben).
-> Der Service setzt jeden Schalter sofort zurück auf `false` nachdem er die Aktion gestartet hat.
+> **Hinweis:** Alle Aktions-Settings (`refresh_all_data`, `update_new_data`,
+> `folder_filter_select_*`, `tmdb_refresh_now`, `tmdb_clear_cache`, `tmdb_show_cache_info`)
+> sind `type="action"` mit `<data>RunPlugin(...)</data>` + `<control type="button" format="action" />`.
 
 ---
 
@@ -476,7 +491,7 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 - Branch: `claude/analyze-tmdb-settings-Jzezc`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.5.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.6.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -484,6 +499,9 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Tab-Umbau: 4→3 Tabs | `claude/analyze-tmdb-settings-Jzezc` | "Portal" → "Portal Login", "Ordner-Filter" → "Portal Einstellung", Cache-Tab aufgelöst und in Portal Einstellung integriert. 3 Gruppen: Ordner-Filter, Daten laden, Daten aktualisieren. |
+| Filter-Modus als Dropdown | `claude/analyze-tmdb-settings-Jzezc` | Zwei Toggles (`folder_filter_use_keywords` + `folder_filter_use_manual`) durch ein Dropdown `folder_filter_mode` ersetzt (0=Alle, 1=Stichwort, 2=Manuell). Unmöglich beide gleichzeitig zu aktivieren. Dependencies grauen irrelevante Settings aus. globals.py wandelt Integer in bestehende Booleans um → addon.py unverändert. |
+| load_all_pages nur bei Cache | `claude/analyze-tmdb-settings-Jzezc` | "Alle Seiten auf einmal laden" ist jetzt ausgegraut wenn "Lokalen Cache verwenden" aus ist. Dependency: `cache_enabled==true`. |
 | Spickzettel KODI_SETTINGS_REFERENCE.md | `claude/review-addon-settings-docs-uVHz3` | Neue Datei mit verifizierten Syntax-Beispielen für alle settings.xml Control-Typen in Kodi 21. CLAUDE.md verweist darauf. Alte Syntax-Blöcke aus CLAUDE.md entfernt. |
 | Sprach-Dropdown statt Freitextfeld | `claude/review-addon-settings-docs-uVHz3` | `tmdb_language` ist jetzt ein Spinner mit 9 Sprachen (de-DE, en-US, en-GB, fr-FR, it-IT, es-ES, nl-NL, pl-PL, tr-TR). Neue String-IDs 32160–32168 in beiden .po-Dateien. |
 | `<dependencies>` Syntax überall | `claude/review-addon-settings-docs-uVHz3` | Alle alten `<enable>eq(...)` und `<enable>eq(-1,true)</enable>` Syntax durch korrekte `<dependencies><dependency type="enable">` Blöcke ersetzt. Alle TMDB-Settings werden beim Deaktivieren korrekt ausgegraut. |

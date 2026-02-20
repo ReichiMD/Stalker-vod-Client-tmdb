@@ -17,8 +17,8 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgctxt "#32001"
-msgid "Portal"
-msgstr "Portal"
+msgid "Portal Login"
+msgstr "Portal Login"
 
 msgctxt "#32002"
 msgid "Server Address (ex. http://xyz:888/c/ or http://xyz:888/stalker_portal/c/)"
@@ -113,8 +113,8 @@ msgid "Fetches all VOD and Series categories from the server and pre-fills the T
 msgstr "Lädt alle VOD- und Serienkategorien vom Server und befüllt den TMDB-Cache. Kann einige Minuten dauern. Kann jederzeit abgebrochen werden."
 
 msgctxt "#32112"
-msgid "Data management"
-msgstr "Datenverwaltung"
+msgid "Data refresh"
+msgstr "Daten aktualisieren"
 
 msgctxt "#32113"
 msgid "Initial setup"
@@ -125,12 +125,12 @@ msgid "Server address and MAC address detected.[CR]Load all VOD data from the se
 msgstr "Server-Adresse und MAC-Adresse erkannt.[CR]Sollen jetzt alle VOD-Daten vom Server geladen werden?[CR][CR]Das kann je nach Inhaltsmenge einige Minuten dauern.[CR]Der Vorgang kann jederzeit abgebrochen werden."
 
 msgctxt "#32115"
-msgid "Folder Filter"
-msgstr "Ordner-Filter"
+msgid "Portal Settings"
+msgstr "Portal Einstellung"
 
 msgctxt "#32116"
-msgid "Filter Mode"
-msgstr "Filter-Modus"
+msgid "Folder filter"
+msgstr "Ordner-Filter"
 
 msgctxt "#32117"
 msgid "Enable keyword filter"
@@ -193,8 +193,8 @@ msgid "Cache"
 msgstr "Cache"
 
 msgctxt "#32132"
-msgid "Cache settings"
-msgstr "Cache-Einstellungen"
+msgid "Data loading"
+msgstr "Daten laden"
 
 msgctxt "#32133"
 msgid "Use local cache"
@@ -339,3 +339,23 @@ msgstr "Polnisch (pl-PL)"
 msgctxt "#32168"
 msgid "Türkçe (tr-TR)"
 msgstr "Türkisch (tr-TR)"
+
+msgctxt "#32170"
+msgid "Filter mode"
+msgstr "Filter-Modus"
+
+msgctxt "#32171"
+msgid "Choose how folders are filtered. 'Show all' = no filtering. 'Keyword filter' = only folders matching your keywords. 'Manual selection' = only hand-picked folders."
+msgstr "Bestimmt wie Ordner gefiltert werden. 'Alle anzeigen' = kein Filter. 'Stichwort-Filter' = nur Ordner die zu deinen Stichwörtern passen. 'Manuelle Auswahl' = nur von dir ausgewählte Ordner."
+
+msgctxt "#32172"
+msgid "Show all folders"
+msgstr "Alle Ordner anzeigen"
+
+msgctxt "#32173"
+msgid "Keyword filter"
+msgstr "Stichwort-Filter"
+
+msgctxt "#32174"
+msgid "Manual selection"
+msgstr "Manuelle Auswahl"
