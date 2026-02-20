@@ -564,7 +564,7 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 - Branch: `claude/review-addon-settings-docs-uVHz3`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.2.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.3.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 

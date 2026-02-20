@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.2" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.3" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,17 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.3  (2026-02-20)
+- Improvement: TMDB API key is now masked in the settings list (shown as
+  asterisks). The keyboard during editing remains normal.
+- Improvement: "What to show" and "TMDB Cache" groups are now greyed out
+  and disabled when "Enable TMDB Metadata" is turned off.
+- New: Cache validity is now a dropdown with three options instead of a
+  text field: "1 month (30 days)", "3 months (90 days)", "Never delete".
+  "Never delete" keeps TMDB metadata indefinitely (no expiry).
+- Renamed: "Load TMDB metadata now" is now "Update TMDB metadata".
+- Cleanup: All button labels no longer contain "(toggle to ...)" hints.
+
 v0.2.2  (2026-02-20)
 - Improvement: All action buttons in Settings are now real clickable buttons
   instead of boolean toggles that snap back. Affects: "Refresh all data",

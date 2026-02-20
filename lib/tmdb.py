@@ -51,7 +51,8 @@ class TmdbClient:
     def __init__(self, api_key, language='de-DE', cache_days=30):
         self.__api_key = api_key
         self.__language = language
-        self.__cache_days = max(1, int(cache_days))
+        # 0 = never delete cache; negative values → clamp to 1
+        self.__cache_days = int(cache_days) if int(cache_days) >= 0 else 1
         self.__cache_path = None
         self.__cache = {}
         self.__cache_loaded = False
@@ -294,9 +295,11 @@ class TmdbClient:
         entry = self.__cache.get(key)
         if entry is None:
             return _CACHE_MISS
-        age_days = (time.time() - entry.get('ts', 0)) / 86400.0
-        if age_days >= self.__cache_days:
-            return _CACHE_MISS
+        if self.__cache_days > 0:
+            age_days = (time.time() - entry.get('ts', 0)) / 86400.0
+            if age_days >= self.__cache_days:
+                return _CACHE_MISS
+        # cache_days == 0 → never expire: always return what's stored
         return entry.get('data')  # may itself be None (negative cache)
 
     def flush(self):

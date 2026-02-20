@@ -116,7 +116,8 @@ class GlobalVariables:
         self.tmdb_config.language = self.__addon.getSetting('tmdb_language') or 'de-DE'
         try:
             cache_days = int(self.__addon.getSetting('tmdb_cache_days') or '30')
-            self.tmdb_config.cache_days = max(1, cache_days)
+            # 0 = never delete (spinner option); negative values → clamp to 1
+            self.tmdb_config.cache_days = cache_days if cache_days >= 0 else 1
         except (ValueError, TypeError):
             self.tmdb_config.cache_days = 30
         # Default true: only false when explicitly set to 'false'

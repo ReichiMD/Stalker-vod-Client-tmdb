@@ -192,47 +192,58 @@
             <group id="tmdb_fields_group" label="32146">
                 <setting id="tmdb_use_poster" type="boolean" label="32147" help="32148">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
 
                 <setting id="tmdb_use_fanart" type="boolean" label="32149" help="32150">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
 
                 <setting id="tmdb_use_plot" type="boolean" label="32151" help="32152">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
 
                 <setting id="tmdb_use_rating" type="boolean" label="32153" help="32154">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
 
                 <setting id="tmdb_use_genres" type="boolean" label="32155" help="32156">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
             </group>
 
             <group id="tmdb_cache_group" label="32137">
-                <setting id="tmdb_cache_days" type="string" label="32138" help="32139">
+                <setting id="tmdb_cache_days" type="integer" label="32138" help="32139">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <default>30</default>
                     <constraints>
-                        <allowempty>false</allowempty>
+                        <options>
+                            <option label="32157">30</option>
+                            <option label="32158">90</option>
+                            <option label="32159">0</option>
+                        </options>
                     </constraints>
-                    <control type="edit" format="string" />
+                    <control type="spinner" format="integer" />
                 </setting>
 
                 <setting id="tmdb_show_cache_info" type="action" label="32140" help="32141">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_cache_info)</data>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -242,6 +253,7 @@
 
                 <setting id="tmdb_refresh_now" type="action" label="32142" help="32143">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_refresh_now)</data>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -251,6 +263,7 @@
 
                 <setting id="tmdb_clear_cache" type="action" label="32144" help="32145">
                     <level>0</level>
+                    <enable>eq(tmdb_enabled,true)</enable>
                     <data>RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=tmdb_clear_cache)</data>
                     <constraints>
                         <allowempty>true</allowempty>
