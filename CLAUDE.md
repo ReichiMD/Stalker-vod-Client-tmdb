@@ -464,6 +464,20 @@ Dafür könnte ein Reset-Button in den Einstellungen ergänzt werden (noch nicht
 
 ## Bekannte Bugs & Fixes (heute gelöst)
 
+### 3. Einstellungen wirken erst nach Kodi-Neustart (v0.2.0 behoben)
+**Problem:** Änderungen an Einstellungen (z.B. TMDB aktivieren, API-Key, Poster/Fanart an/aus,
+Ordner-Filter, Portal-Adresse) hatten keine Wirkung ohne Kodi-Neustart.
+**Ursache:** `addon.xml` hat `<reuselanguageinvoker>true</reuselanguageinvoker>` – Kodi
+wiederverwendet denselben Python-Prozess für mehrere Navigationen. In `globals.py::init_globals()`
+standen ALLE `getSetting()`-Aufrufe innerhalb eines `if self.__is_addd_on_first_run:`-Guards,
+der beim zweiten Aufruf (selber Prozess) nicht mehr ausgeführt wurde. Einstellungen wurden
+damit nur einmal beim Prozessstart gelesen.
+**Fix:** Alle `getSetting()`-Aufrufe (und `handle = int(sys.argv[1])`) aus dem First-Run-Guard
+herausgezogen. Sie werden jetzt bei **jedem** `init_globals()`-Aufruf neu gelesen. Nur echte
+statische Info (addon_id, name, Pfad, token_path-Erstellung) verbleibt im Guard.
+Zusätzlich: `_tmdb_client_singleton` in `addon.py::run()` wird jetzt bei jedem Aufruf zurückgesetzt,
+damit TMDB-Setting-Änderungen (Key, Sprache) sofort einen neuen Client erzeugen.
+
 ### 1. `setRating()` TypeError
 **Problem:** `video_info.setRating(float(rating), type='tmdb', defaultt=True)` → TypeError
 **Ursache:** Falsche Argument-Reihenfolge + Kodi akzeptiert `defaultt` nicht als Keyword-Argument
@@ -555,9 +569,9 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/tmdb-metadata-strategy-Dc4Wn`
+- Branch: `claude/fix-settings-reload-786Qf`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.1.9.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.0.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -565,6 +579,7 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Settings-Reload-Fix | `claude/fix-settings-reload-786Qf` | Alle getSetting()-Aufrufe werden jetzt bei jeder Navigation neu ausgeführt (nicht nur beim ersten Prozessstart). Betrifft TMDB, Filter, Portal, Cache. TMDB-Singleton wird ebenfalls zurückgesetzt. |
 | Auswahl: welche Infos anzeigen | `claude/tmdb-metadata-strategy-Dc4Wn` | Neue Gruppe "What to show" im TMDB-Tab mit 5 Toggles: Poster, Fanart, Plot, Rating, Genre. Alle standardmäßig aktiv. `TmdbConfig` hat 5 neue `use_*`-Felder; `_apply_tmdb_to_item()` wertet sie aus. |
 | TMDB-Metadaten jetzt laden | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_refresh_now` im TMDB-Tab. Lädt TMDB-Daten nur für Filme im Stalker-Cache, ohne Stalker-Daten neu herunterzuladen. Überspringt bereits gecachte Filme. Mit Abbrechen-Knopf und Rate-Limit-Schutz. |
 | TMDB-Cache löschen | `claude/tmdb-metadata-strategy-Dc4Wn` | Toggle `tmdb_clear_cache` löscht `tmdb_cache.json`. Daten werden beim nächsten Ordner-Öffnen neu heruntergeladen. |

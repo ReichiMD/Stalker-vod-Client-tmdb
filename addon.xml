@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.1.9" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.0" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,14 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.0  (2026-02-20)
+- Fix: Einstellungsänderungen werden jetzt sofort wirksam ohne Kodi-Neustart.
+  Ursache: Da reuselanguageinvoker=true aktiv ist, wurde der Python-Prozess
+  wiederverwendet und Einstellungen nur beim ersten Aufruf gelesen. Alle
+  getSetting()-Aufrufe in init_globals() werden nun bei jeder Navigation neu
+  ausgeführt. Betroffen waren: TMDB an/aus, API-Key, Sprache, Poster/Fanart-
+  Toggles, Cache-Einstellungen, Ordner-Filter, Portal-Adresse u.a.
+
 v0.1.9  (2026-02-19)
 - New: "What to show" group in the TMDB tab with five toggles to control
   which TMDB fields are applied to each film:
