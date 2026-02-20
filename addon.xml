@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.6" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.7" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,14 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.7  (2026-02-20)
+- New: Remove language tags from folder and film names. Strips prefixes
+  like "de - " and suffixes like "(DE)" for a cleaner display.
+  Example: "de - Action" becomes "Action", "Hulk (DE)" becomes "Hulk".
+  Enabled by default with a configurable keyword list in Portal Settings.
+  Also improves TMDB search accuracy (searches "Hulk" instead of
+  "Hulk (DE)").
+
 v0.2.6  (2026-02-20)
 - Redesign: Settings reduced from 4 tabs to 3 tabs. "Portal" renamed to
   "Portal Login". "Folder Filter" renamed to "Portal Settings" and now

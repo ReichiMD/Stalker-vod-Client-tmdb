@@ -139,6 +139,28 @@
                 </setting>
             </group>
 
+            <group id="display_settings" label="32175">
+                <setting id="remove_lang_tags" type="boolean" label="32176" help="32177">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+
+                <setting id="remove_lang_keywords" type="string" label="32178" help="32179">
+                    <level>0</level>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="remove_lang_tags">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <default>de, en, nl, fr, it, es, pl, tr, ru, pt, ar, multi, deutsch, german</default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+            </group>
+
             <group id="cache_settings" label="32132">
                 <setting id="cache_enabled" type="boolean" label="32133" help="32134">
                     <level>0</level>

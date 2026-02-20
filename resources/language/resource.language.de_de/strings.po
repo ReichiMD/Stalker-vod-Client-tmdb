@@ -359,3 +359,23 @@ msgstr "Stichwort-Filter"
 msgctxt "#32174"
 msgid "Manual selection"
 msgstr "Manuelle Auswahl"
+
+msgctxt "#32175"
+msgid "Display"
+msgstr "Anzeige"
+
+msgctxt "#32176"
+msgid "Remove language tags"
+msgstr "Sprachkürzel entfernen"
+
+msgctxt "#32177"
+msgid "Removes language codes like 'de - ' or '(DE)' from folder and film names for a cleaner display."
+msgstr "Entfernt Sprachkürzel wie 'de - ' oder '(DE)' aus Ordner- und Filmnamen für eine sauberere Anzeige."
+
+msgctxt "#32178"
+msgid "Tags to remove (comma-separated)"
+msgstr "Zu entfernende Kürzel (kommagetrennt)"
+
+msgctxt "#32179"
+msgid "Comma-separated language codes or words to remove from names. Example: de, en, nl, deutsch, german, multi"
+msgstr "Kommagetrennte Sprachcodes oder Wörter die aus Namen entfernt werden. Beispiel: de, en, nl, deutsch, german, multi"

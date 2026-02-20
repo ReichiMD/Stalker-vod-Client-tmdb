@@ -22,6 +22,39 @@ from .tmdb import TmdbClient, TmdbRateLimitError
 
 _tmdb_client_singleton = None
 _rate_limit_notified = False  # show the rate-limit toast only once per plugin run
+_lang_tag_prefix_re = None
+_lang_tag_suffix_re = None
+
+
+def _build_lang_tag_pattern():
+    """Build and cache the regex patterns for language tag removal."""
+    global _lang_tag_prefix_re, _lang_tag_suffix_re
+    cfg = G.display_config
+    if not cfg.remove_lang_tags or not cfg.lang_tag_keywords:
+        _lang_tag_prefix_re = None
+        _lang_tag_suffix_re = None
+        return
+    escaped = [re.escape(kw) for kw in cfg.lang_tag_keywords]
+    group = '|'.join(escaped)
+    # Prefix: "de - Action" → "Action"
+    _lang_tag_prefix_re = re.compile(r'^(?:' + group + r')\s*[-–]\s*', re.IGNORECASE)
+    # Suffix: "(DE)" or "[DE]" or "- DE"
+    _lang_tag_suffix_re = re.compile(
+        r'\s*(?:'
+        r'[\(\[]\s*(?:' + group + r')\s*[\)\]]'
+        r'|[-–]\s*(?:' + group + r')'
+        r')\s*$',
+        re.IGNORECASE
+    )
+
+
+def _clean_lang_tags(name):
+    """Remove language prefix/suffix tags from a name if enabled."""
+    if _lang_tag_prefix_re is None or not name:
+        return name
+    cleaned = _lang_tag_prefix_re.sub('', name)
+    cleaned = _lang_tag_suffix_re.sub('', cleaned)
+    return cleaned.strip() if cleaned.strip() else name
 
 
 def _show_rate_limit_notification():
@@ -227,13 +260,14 @@ class StalkerAddon:
 
         genres = _apply_category_filter(Api.get_tv_genres(), G.get_filter_file_path('tv'))
         for genre in genres:
-            list_item = xbmcgui.ListItem(label=genre['title'].upper())
-            fav_url = G.get_plugin_url({'action': 'tv_listing', 'category': genre['title'], 'category_id': genre['id'], 'page': 1,
+            genre_name = _clean_lang_tags(genre['title'])
+            list_item = xbmcgui.ListItem(label=genre_name.upper())
+            fav_url = G.get_plugin_url({'action': 'tv_listing', 'category': genre_name, 'category_id': genre['id'], 'page': 1,
                                         'update_listing': False, 'search_term': '', 'fav': 1})
-            search_url = G.get_plugin_url({'action': 'tv_search', 'category': genre['title'], 'category_id': genre['id'], 'fav': 0})
+            search_url = G.get_plugin_url({'action': 'tv_search', 'category': genre_name, 'category_id': genre['id'], 'fav': 0})
             list_item.addContextMenuItems(
                 [('Favorites', f'Container.Update({fav_url})'), ('Search', f'RunPlugin({search_url}, False)')])
-            url = G.get_plugin_url({'action': 'tv_listing', 'category': genre['title'].upper(), 'category_id': genre['id'], 'page': 1,
+            url = G.get_plugin_url({'action': 'tv_listing', 'category': genre_name.upper(), 'category_id': genre['id'], 'page': 1,
                                     'update_listing': False})
             xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=False, cacheToDisc=False)
@@ -262,12 +296,13 @@ class StalkerAddon:
             stalker_cache.set_categories('vod', raw_cats)
         categories = _apply_category_filter(raw_cats, G.get_filter_file_path('vod'))
         for category in categories:
-            list_item = xbmcgui.ListItem(label=category['title'])
-            fav_url = G.get_plugin_url({'action': 'vod_listing', 'category': category['title'], 'category_id': category['id'], 'page': 1,
+            cat_name = _clean_lang_tags(category['title'])
+            list_item = xbmcgui.ListItem(label=cat_name)
+            fav_url = G.get_plugin_url({'action': 'vod_listing', 'category': cat_name, 'category_id': category['id'], 'page': 1,
                                         'update_listing': False, 'search_term': '', 'fav': 1})
-            search_url = G.get_plugin_url({'action': 'vod_search', 'category': category['title'], 'category_id': category['id'], 'fav': 0})
+            search_url = G.get_plugin_url({'action': 'vod_search', 'category': cat_name, 'category_id': category['id'], 'fav': 0})
             list_item.addContextMenuItems([('Favorites', f'Container.Update({fav_url})'), ('Search', f'RunPlugin({search_url}, False)')])
-            url = G.get_plugin_url({'action': 'vod_listing', 'category': category['title'], 'category_id': category['id'], 'page': 1,
+            url = G.get_plugin_url({'action': 'vod_listing', 'category': cat_name, 'category_id': category['id'], 'page': 1,
                                     'update_listing': False, 'search_term': '', 'fav': 0})
             xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=False, cacheToDisc=False)
@@ -297,12 +332,13 @@ class StalkerAddon:
             stalker_cache.set_categories('series', raw_cats)
         categories = _apply_category_filter(raw_cats, G.get_filter_file_path('series'))
         for category in categories:
-            list_item = xbmcgui.ListItem(label=category['title'])
-            fav_url = G.get_plugin_url({'action': 'series_listing', 'category': category['title'], 'category_id': category['id'], 'page': 1,
+            cat_name = _clean_lang_tags(category['title'])
+            list_item = xbmcgui.ListItem(label=cat_name)
+            fav_url = G.get_plugin_url({'action': 'series_listing', 'category': cat_name, 'category_id': category['id'], 'page': 1,
                                         'update_listing': False, 'search_term': '', 'fav': 1})
-            search_url = G.get_plugin_url({'action': 'series_search', 'category': category['title'], 'category_id': category['id'], 'fav': 0})
+            search_url = G.get_plugin_url({'action': 'series_search', 'category': cat_name, 'category_id': category['id'], 'fav': 0})
             list_item.addContextMenuItems([('Favorites', f'Container.Update({fav_url})'), ('Search', f'RunPlugin({search_url}, False)')])
-            url = G.get_plugin_url({'action': 'series_listing', 'category': category['title'], 'category_id': category['id'], 'page': 1,
+            url = G.get_plugin_url({'action': 'series_listing', 'category': cat_name, 'category_id': category['id'], 'page': 1,
                                     'update_listing': False, 'search_term': '', 'fav': 0})
             xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, True)
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=False, cacheToDisc=False)
@@ -325,7 +361,7 @@ class StalkerAddon:
         item_count = len(videos['data'])
         directory_items = []
         for video in videos['data']:
-            label = video['name']
+            label = _clean_lang_tags(video['name'])
             if video.get('fav', 0) == 1:
                 label = label + ' ★'
             list_item = xbmcgui.ListItem(label, label)
@@ -461,7 +497,8 @@ class StalkerAddon:
         item_count = len(videos['data'])
         directory_items = []
         for video in videos['data']:
-            label = video['name'] if video.get('hd', 1) == 1 else video['name'] + ' (SD)'
+            name = _clean_lang_tags(video['name'])
+            label = name if video.get('hd', 1) == 1 else name + ' (SD)'
             if video.get('fav', 0) == 1:
                 label = label + ' ★'
             list_item = xbmcgui.ListItem(label=label, label2=label)
@@ -482,20 +519,20 @@ class StalkerAddon:
             video_info = list_item.getVideoInfoTag()
             if video['series']:
                 url = G.get_plugin_url({'action': 'sub_folder', 'video_id': video['id'], 'start': video['series'][0], 'end': video['series'][-1],
-                                        'name': video['name'], 'poster_url': poster_url})
+                                        'name': name, 'poster_url': poster_url})
                 is_folder = True
                 video_info.setMediaType('season')
             else:
-                url = G.get_plugin_url({'action': 'play', 'video_id': video['id'], 'series': 0, 'title': video['name'], 'cmd': video.get('cmd', '')})
+                url = G.get_plugin_url({'action': 'play', 'video_id': video['id'], 'series': 0, 'title': name, 'cmd': video.get('cmd', '')})
                 time = get_int_value(video, 'time')
                 if time != 0:
                     video_info.setDuration(time * 60)
                 video_info.setMediaType('movie')
                 list_item.setProperty('IsPlayable', 'true')
 
-            video_info.setTitle(video['name'])
-            video_info.setOriginalTitle(video['name'])
-            video_info.setSortTitle(video['name'])
+            video_info.setTitle(name)
+            video_info.setOriginalTitle(name)
+            video_info.setSortTitle(name)
             if 'country' in video:
                 video_info.setCountries([video['country']])
             video_info.setDirectors([video['director']])
@@ -510,9 +547,9 @@ class StalkerAddon:
                 video_info.setYear(year)
             # TMDB enrichment: overrides poster, fanart, plot, rating if available
             if video['series']:
-                _apply_tmdb_tv(list_item, video_info, video['name'], year if year != 0 else None, poster_url)
+                _apply_tmdb_tv(list_item, video_info, name, year if year != 0 else None, poster_url)
             else:
-                _apply_tmdb_movie(list_item, video_info, video['name'], year if year != 0 else None, poster_url)
+                _apply_tmdb_movie(list_item, video_info, name, year if year != 0 else None, poster_url)
             directory_items.append((url, list_item, is_folder))
         # Add navigation items
         total_items = get_int_value(videos, 'total_items')
@@ -533,7 +570,8 @@ class StalkerAddon:
         item_count = len(series['data'])
         directory_items = []
         for video in series['data']:
-            label = video['name'] if video.get('hd', 1) == 1 else video['name'] + ' (SD)'
+            name = _clean_lang_tags(video['name'])
+            label = name if video.get('hd', 1) == 1 else name + ' (SD)'
             if video.get('fav', 0) == 1:
                 label = label + ' ★'
             list_item = xbmcgui.ListItem(label=label, label2=label)
@@ -551,12 +589,12 @@ class StalkerAddon:
                 else:
                     poster_url = G.portal_config.portal_base_url + video['screenshot_uri']
             video_info = list_item.getVideoInfoTag()
-            url = G.get_plugin_url({'action': 'season_listing', 'video_id': video['id'], 'name': video['name'], 'poster_url': poster_url})
+            url = G.get_plugin_url({'action': 'season_listing', 'video_id': video['id'], 'name': name, 'poster_url': poster_url})
             video_info.setMediaType('season')
 
-            video_info.setTitle(video['name'])
-            video_info.setOriginalTitle(video['name'])
-            video_info.setSortTitle(video['name'])
+            video_info.setTitle(name)
+            video_info.setOriginalTitle(name)
+            video_info.setSortTitle(name)
             if 'country' in video:
                 video_info.setCountries([video['country']])
             video_info.setDirectors([video['director']])
@@ -570,7 +608,7 @@ class StalkerAddon:
             if year != 0:
                 video_info.setYear(year)
             # TMDB enrichment: overrides poster, fanart, plot, rating if available
-            _apply_tmdb_tv(list_item, video_info, video['name'], year if year != 0 else None, poster_url)
+            _apply_tmdb_tv(list_item, video_info, name, year if year != 0 else None, poster_url)
             directory_items.append((url, list_item, True))
         # Add navigation items
         total_items = get_int_value(series, 'total_items')
@@ -851,15 +889,16 @@ class StalkerAddon:
                     for video in result.get('data', []):
                         if not silent and progress.iscanceled():
                             break
+                        vname = _clean_lang_tags(video['name'])
                         if not silent:
-                            progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
+                            progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, vname))
                         year = get_int_value(video, 'year')
                         year = year if year != 0 else None
                         try:
                             if cat_type == 'series' or video.get('series'):
-                                tmdb.get_tv_info(video['name'], year)
+                                tmdb.get_tv_info(vname, year)
                             else:
-                                tmdb.get_movie_info(video['name'], year)
+                                tmdb.get_movie_info(vname, year)
                         except TmdbRateLimitError:
                             rate_limit_hit = True
                             break
@@ -957,14 +996,15 @@ class StalkerAddon:
                     for video in new_items:
                         if progress.iscanceled():
                             break
-                        progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
+                        vname = _clean_lang_tags(video['name'])
+                        progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, vname))
                         year = get_int_value(video, 'year')
                         year = year if year != 0 else None
                         try:
                             if cat_type == 'series' or video.get('series'):
-                                tmdb.get_tv_info(video['name'], year)
+                                tmdb.get_tv_info(vname, year)
                             else:
-                                tmdb.get_movie_info(video['name'], year)
+                                tmdb.get_movie_info(vname, year)
                         except TmdbRateLimitError:
                             rate_limit_hit = True
                             break
@@ -1086,14 +1126,15 @@ class StalkerAddon:
                 for video in videos:
                     if progress.iscanceled():
                         break
-                    progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, video['name']))
+                    vname = _clean_lang_tags(video['name'])
+                    progress.update(pct, '[{}/{}] {}: {}'.format(idx + 1, total, cat_name, vname))
                     year = get_int_value(video, 'year')
                     year = year if year != 0 else None
                     try:
                         if cat_type == 'series' or video.get('series'):
-                            tmdb.get_tv_info(video['name'], year)
+                            tmdb.get_tv_info(vname, year)
                         else:
-                            tmdb.get_movie_info(video['name'], year)
+                            tmdb.get_movie_info(vname, year)
                     except TmdbRateLimitError:
                         rate_limit_hit = True
                         break
@@ -1276,5 +1317,6 @@ def run(argv):
     _tmdb_client_singleton = None
     _rate_limit_notified = False
     G.init_globals()
+    _build_lang_tag_pattern()
     stalker_addon = StalkerAddon()
     stalker_addon.router(argv[2][1:])
