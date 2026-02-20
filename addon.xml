@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.1" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.2.4" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,48 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.2.4  (2026-02-20)
+- Improvement: Language selection in the TMDB tab is now a dropdown instead
+  of a free-text field. 9 languages available: Deutsch (de-DE), English USA
+  (en-US), English UK (en-GB), Français (fr-FR), Italiano (it-IT),
+  Español (es-ES), Nederlands (nl-NL), Polski (pl-PL), Türkçe (tr-TR).
+  Default remains de-DE.
+- Improvement: "Refresh all data", "Add new content only" and "Update TMDB
+  metadata" now close the settings dialog automatically before showing the
+  progress bar. Previously the settings dialog stayed open behind the progress
+  bar which looked confusing.
+- Improvement: "Delete TMDB cache" now shows a Yes/No confirmation dialog
+  before deleting. Prevents accidental deletion.
+- Fix: All TMDB sub-settings (API key, language, poster/fanart/plot/rating/
+  genre toggles, cache validity, cache buttons) are now correctly greyed out
+  when "Enable TMDB Metadata" is turned off. Updated to the correct Kodi 21
+  &lt;dependencies&gt; syntax. Previously used the old eq(-1,true) offset
+  syntax which is fragile when settings are reordered.
+- New: KODI_SETTINGS_REFERENCE.md – internal developer reference with
+  verified correct syntax for all settings.xml control types in Kodi 21.
+  Prevents regressions from using outdated syntax.
+
+v0.2.3  (2026-02-20)
+- Improvement: TMDB API key is now masked in the settings list (shown as
+  asterisks). The keyboard during editing remains normal.
+- Improvement: "What to show" and "TMDB Cache" groups are now greyed out
+  and disabled when "Enable TMDB Metadata" is turned off.
+- New: Cache validity is now a dropdown with three options instead of a
+  text field: "1 month (30 days)", "3 months (90 days)", "Never delete".
+  "Never delete" keeps TMDB metadata indefinitely (no expiry).
+- Renamed: "Load TMDB metadata now" is now "Update TMDB metadata".
+- Cleanup: All button labels no longer contain "(toggle to ...)" hints.
+
+v0.2.2  (2026-02-20)
+- Improvement: All action buttons in Settings are now real clickable buttons
+  instead of boolean toggles that snap back. Affects: "Refresh all data",
+  "Add new content only", "Load TMDB metadata now", "Delete TMDB cache",
+  "Show cache info", "Select VOD folders", "Select Series folders",
+  "Select TV folders". Buttons use type="action" with correct version="1"
+  syntax. Clicking a button executes the action immediately - no toggle
+  bounce, no service callback needed for these settings.
+- Internal: removed all toggle-detection code from service.py.
+
 v0.2.1  (2026-02-20)
 - Fix: TMDB-Negativcache-Bug behoben. Filme die auf TMDB nicht gefunden werden,
   wurden trotz Cache-Eintrag bei jedem Ordner-Öffnen erneut live abgefragt.

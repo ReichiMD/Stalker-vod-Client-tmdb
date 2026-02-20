@@ -35,130 +35,32 @@ das Addon herunterzuladen und in Kodi zu installieren. Ohne aktuelle ZIP ist die
 
 ---
 
-## ⚠️ KODI 21 (OMEGA) – BEKANNTE EINSCHRÄNKUNGEN & PFLICHT-WISSEN
+## ⚠️ KODI 21 (OMEGA) – PFLICHT-WISSEN
 
-> **Diese Regeln MÜSSEN in jeder Session beachtet werden, sonst entstehen unsichtbare UI-Elemente.**
+> **Vor dem Coden IMMER zuerst `KODI_SETTINGS_REFERENCE.md` lesen!**
+> Dort sind alle korrekten Syntax-Beispiele mit Erklärungen hinterlegt.
+> Ohne diesen Spickzettel entstehen unsichtbare UI-Elemente ohne Fehlermeldung.
 
-### REGEL 1: Kein `type="action"` mit `<action>`-Child in `settings version="1"`
+### Kurzübersicht der häufigsten Fallen
 
-**Problem:** In Kodi 21 (Omega) mit `<settings version="1">` ist das `<action>`-Tag
-als Child von `<setting type="action">` **nicht valide**. Kodi 21 ignoriert es still –
-und wirft dabei die **gesamte `<group>`** weg. Der Nutzer sieht gar nichts.
+| Fehler | Fix | Details in |
+|---|---|---|
+| Button unsichtbar | `<data>` statt `<action>`, `format="action"` am Control | KODI_SETTINGS_REFERENCE.md §2 |
+| Spinner unsichtbar | `format="integer"` statt `subtype="integer"` | KODI_SETTINGS_REFERENCE.md §4 |
+| Ausgrauen klappt nicht | `<dependencies>` Block statt alter `<enable>eq(...)` Syntax | KODI_SETTINGS_REFERENCE.md §7 |
+| String fehlt / leer | Beide .po-Dateien pflegen (en_gb + de_de) | KODI_SETTINGS_REFERENCE.md §9 |
+| Setting nach Klick auf "Schließen" noch aktiv | `<close>true</close>` in Action-Settings | KODI_SETTINGS_REFERENCE.md §2 |
 
-```xml
-<!-- ❌ FUNKTIONIERT NICHT in Kodi 21 settings version="1" -->
-<setting id="my_button" type="action" label="32001">
-    <action>RunPlugin(plugin://...)</action>   <!-- ← dieser Tag killt die ganze Gruppe -->
-    <control type="button" />
-</setting>
-```
+### REGEL: `onSettingsChanged` wird bei JEDER Einstellungsänderung aufgerufen
 
-**Workaround – IMMER SO MACHEN:**
-```xml
-<!-- ✅ KORREKT: boolean toggle als Auslöser -->
-<setting id="my_button" type="boolean" label="32001" help="32002">
-    <level>0</level>
-    <default>false</default>
-    <control type="toggle" />
-</setting>
-```
-
-Dazu im Service (`lib/service.py`) in `onSettingsChanged()`:
-```python
-addon = xbmcaddon.Addon()
-if addon.getSetting('my_button') == 'true':
-    addon.setSetting('my_button', 'false')   # sofort zurücksetzen
-    xbmc.executebuiltin('RunPlugin(plugin://...?action=do_something)')
-    return
-```
-
-**Warum funktioniert das?**
-- `type="boolean"` ist vollständig valide in allen Kodi-Versionen.
-- Kodi ruft `onSettingsChanged()` im Service auf, sobald der Nutzer den Schalter umlegt.
-- Der Service setzt den Wert sofort zurück auf `false` (der Schalter springt zurück).
-- Anschließend startet er `RunPlugin(...)` → der gewünschte Effekt tritt ein.
-
-### REGEL 2: Sprachdateien – immer BEIDE Dateien pflegen
-
-Wenn neue String-IDs hinzugefügt werden, **immer in beiden Dateien** eintragen:
-- `resources/language/resource.language.en_gb/strings.po` (Englisch – Fallback)
-- `resources/language/resource.language.de_de/strings.po` (Deutsch – primär für den Nutzer)
-
-Kodi lädt automatisch die passende Sprachdatei. Fehlt ein String, wird das `<group>`-
-oder `<setting>`-Element möglicherweise ausgeblendet (kein Fehler, nur leer/unsichtbar).
-
-### REGEL 3: `onSettingsChanged` wird bei JEDER Einstellungsänderung aufgerufen
-
-Nicht nur bei der Ersteinrichtung oder beim Refresh-Button. Jede Änderung einer beliebigen
-Einstellung feuert diesen Callback. Deshalb ist die **genaue Reihenfolge der Prüfungen** wichtig:
+Nicht nur bei der Ersteinrichtung. Jede Änderung einer beliebigen Einstellung feuert diesen
+Callback. Deshalb ist die **genaue Reihenfolge der Prüfungen** wichtig:
 
 ```python
 def onSettingsChanged(self):
     addon = xbmcaddon.Addon()
-    # 1. Zuerst: Refresh-Button prüfen (spezifisch, kein Server nötig)
-    if addon.getSetting('refresh_all_data') == 'true':
-        addon.setSetting('refresh_all_data', 'false')
-        xbmc.executebuiltin('RunPlugin(...?action=refresh_all)')
-        return   # ← return verhindert, dass der Ersteinrichtungs-Check ebenfalls läuft
-    # 2. Dann: Ersteinrichtungs-Check (nur wenn Server + MAC gesetzt und Flag nicht da)
+    # 1. Zuerst: Ersteinrichtungs-Check (nur wenn Server + MAC gesetzt und Flag nicht da)
     ...
-```
-
-### REGEL 4: Kein `type="integer"` mit Spinner und `<options>` in `settings version="1"`
-
-**Problem:** In Kodi 21 (Omega) schlägt `type="integer"` mit
-`<control type="spinner" subtype="integer" />` und `<options>`-Block fehl,
-weil Kodi ein `format`-Attribut am Control erwartet – das bei Spinner-Controls
-nicht vorgesehen ist. Fehler im Log:
-
-```
-error <ISettingControl>: error reading "format" attribute of <control>
-error <CSetting>: error reading <control> tag of "my_setting"
-warning <CSettingGroup>: unable to read setting "my_setting"
-```
-
-Das Setting wird **lautlos weggeworfen**. In der UI fehlt nur dieses eine Element –
-aber da der gespeicherte Wert nie geladen wird, bleibt die Variable intern auf ihrem
-Standardwert (z.B. 0 = aus). Alle anderen Settings in der Gruppe bleiben sichtbar,
-wirken aber nicht, weil der Modus-Wert fehlt.
-
-```xml
-<!-- ❌ FUNKTIONIERT NICHT in Kodi 21 settings version="1" -->
-<setting id="my_mode" type="integer" label="32001">
-    <constraints>
-        <options>
-            <option label="32002">0</option>
-            <option label="32003">1</option>
-        </options>
-    </constraints>
-    <control type="spinner" subtype="integer" />   <!-- ← fehlendes format= killt das Setting -->
-</setting>
-```
-
-**Workaround – IMMER SO MACHEN:**
-Für Mehrfach-Auswahl (z.B. 3 Modi) statt eines Spinners **mehrere `type="boolean"` Toggles** verwenden:
-
-```xml
-<!-- ✅ KORREKT: zwei boolean toggles statt eines 3-Wege-Spinners -->
-<setting id="filter_use_keywords" type="boolean" label="32001" help="32002">
-    <level>0</level>
-    <default>false</default>
-    <control type="toggle" />
-</setting>
-<setting id="filter_use_manual" type="boolean" label="32003" help="32004">
-    <level>0</level>
-    <default>false</default>
-    <control type="toggle" />
-</setting>
-```
-
-Im Python-Code dann einfach:
-```python
-if cfg.use_manual:
-    # manuelle Auswahl (hat Vorrang)
-elif cfg.use_keywords:
-    # Stichwörter-Filter
-# sonst: alles anzeigen
 ```
 
 ---
@@ -187,12 +89,13 @@ damit TMDb Helper optional eigene Overlays/Details anzeigen kann. Pflicht ist es
 
 | Datei | Zweck |
 |---|---|
+| **`KODI_SETTINGS_REFERENCE.md`** | **Spickzettel: korrekte settings.xml Syntax für Kodi 21 – VOR dem Coden lesen!** |
 | `lib/tmdb.py` | TMDB API Client + 30-Tage-Cache |
 | `lib/addon.py` | Kodi ListItem-Aufbau, TMDB-Felder anwenden |
 | `lib/api.py` | Stalker Middleware API Client |
 | `lib/auth.py` | Stalker Authentifizierung / Token-Verwaltung |
-| `resources/settings.xml` | Kodi Einstellungen (zwei Sections, gleiche Addon-ID) |
-| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32001–32136) – immer parallel in `de_de/strings.po` pflegen! |
+| `resources/settings.xml` | Kodi Einstellungen (vier Sections, gleiche Addon-ID) |
+| `resources/language/resource.language.en_gb/strings.po` | String-IDs (32001–32168) – immer parallel in `de_de/strings.po` pflegen! |
 | `resources/language/resource.language.de_de/strings.po` | Deutsche Übersetzung aller Strings – Kodi lädt sie automatisch bei dt. Sprache |
 
 ---
@@ -569,9 +472,9 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/tmdb-cache-performance-Jb0xr`
+- Branch: `claude/review-addon-settings-docs-uVHz3`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.1.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.2.4.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -579,6 +482,13 @@ das ist in Kodi valide, die Sections sind visuelle Tabs/Kategorien.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Spickzettel KODI_SETTINGS_REFERENCE.md | `claude/review-addon-settings-docs-uVHz3` | Neue Datei mit verifizierten Syntax-Beispielen für alle settings.xml Control-Typen in Kodi 21. CLAUDE.md verweist darauf. Alte Syntax-Blöcke aus CLAUDE.md entfernt. |
+| Sprach-Dropdown statt Freitextfeld | `claude/review-addon-settings-docs-uVHz3` | `tmdb_language` ist jetzt ein Spinner mit 9 Sprachen (de-DE, en-US, en-GB, fr-FR, it-IT, es-ES, nl-NL, pl-PL, tr-TR). Neue String-IDs 32160–32168 in beiden .po-Dateien. |
+| `<dependencies>` Syntax überall | `claude/review-addon-settings-docs-uVHz3` | Alle alten `<enable>eq(...)` und `<enable>eq(-1,true)</enable>` Syntax durch korrekte `<dependencies><dependency type="enable">` Blöcke ersetzt. Alle TMDB-Settings werden beim Deaktivieren korrekt ausgegraut. |
+| `<close>true</close>` bei Refresh-Buttons | `claude/review-addon-settings-docs-uVHz3` | "Alle Daten aktualisieren", "Nur neue Inhalte", "TMDB-Metadaten aktualisieren" schließen Einstellungen automatisch bevor der Fortschrittsbalken erscheint. |
+| Ja/Nein-Dialog bei Cache löschen | `claude/review-addon-settings-docs-uVHz3` | Vor dem Löschen des TMDB-Caches erscheint eine Bestätigungsabfrage. Verhindert versehentliches Löschen. |
+| API-Key sichtbar (kein Sternchen) | `claude/review-addon-settings-docs-uVHz3` | `hidden="true"` vom API-Key-Feld entfernt. Der Schlüssel ist jetzt im Klartext sichtbar (kein Verstecken nötig). |
+| Echte Buttons in Einstellungen | `claude/review-addon-settings-docs-uVHz3` | Alle "Aktion"-Toggles durch echte `type="action"` Buttons ersetzt. Korrekte `version="1"` Syntax: `<data>` + `<control type="button" format="action"/>`. Toggle-Erkennungscode aus service.py entfernt. CLAUDE.md Regeln 1+4 korrigiert. |
 | TMDB-Negativcache-Bug-Fix | `claude/tmdb-cache-performance-Jb0xr` | Filme ohne TMDB-Treffer wurden trotz Cache-Eintrag bei jedem Ordner-Öffnen erneut live abgefragt. Sentinel-Objekt `_CACHE_MISS` unterscheidet jetzt "nicht im Cache" von "gecacht, kein Treffer". 3. Öffnen ist jetzt genauso schnell wie 2. |
 | Settings-Reload-Fix | `claude/fix-settings-reload-786Qf` | Alle getSetting()-Aufrufe werden jetzt bei jeder Navigation neu ausgeführt (nicht nur beim ersten Prozessstart). Betrifft TMDB, Filter, Portal, Cache. TMDB-Singleton wird ebenfalls zurückgesetzt. |
 | Auswahl: welche Infos anzeigen | `claude/tmdb-metadata-strategy-Dc4Wn` | Neue Gruppe "What to show" im TMDB-Tab mit 5 Toggles: Poster, Fanart, Plot, Rating, Genre. Alle standardmäßig aktiv. `TmdbConfig` hat 5 neue `use_*`-Felder; `_apply_tmdb_to_item()` wertet sie aus. |
