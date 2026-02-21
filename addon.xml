@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.5" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.6" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,15 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.6  (2026-02-21)
+- Improvement: TMDB cache now prunes expired entries on load instead of
+  keeping them forever. Previously, entries older than the configured
+  cache validity (default 30 days) were ignored on access but never
+  removed from the cache file, causing it to grow indefinitely.
+  Now expired entries are deleted when the cache is loaded, keeping the
+  file size in check. When cache validity is set to "Never delete",
+  no pruning takes place.
+
 v0.3.5  (2026-02-21)
 - New: Before loading portal data the user is asked whether to run with
   progress display or in the background. Background mode runs silently

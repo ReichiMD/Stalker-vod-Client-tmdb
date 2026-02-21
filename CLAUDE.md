@@ -531,9 +531,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/cache-sync-completion-CoPCD`
+- Branch: `claude/image-storage-cache-planning-6aDlL`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.5.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.6.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -541,6 +541,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| TMDB-Cache-Pruning | `claude/image-storage-cache-planning-6aDlL` | Abgelaufene Cache-Einträge werden beim Laden automatisch entfernt statt ewig in der Datei zu bleiben. Verhindert unbegrenztes Wachstum der tmdb_cache.json. Bei "Nie löschen" findet kein Pruning statt. |
 | Cache-Sync Abschlussdialog | `claude/cache-sync-completion-CoPCD` | Nach vollständigem Cache-Sync erscheint OK-Dialog: "X neue Inhalte hinzugefügt – Cache ist aktuell" oder "Keine neuen Inhalte – Cache ist bereits aktuell". Im Silent-Modus wird eine kurze Benachrichtigung angezeigt. |
 | Vordergrund/Hintergrund-Wahl | `claude/cache-sync-completion-CoPCD` | Vor dem Daten-Laden wird gefragt ob mit Fortschrittsanzeige oder im Hintergrund geladen werden soll. Hintergrund-Modus läuft lautlos und zeigt am Ende eine kurze Notification. |
 | Portal-Wechsel-Erkennung | `claude/cache-sync-completion-CoPCD` | Automatische Erkennung wenn Server-Adresse oder MAC sich ändert. Stalker-Cache wird automatisch gelöscht (portal-spezifisch, wertlos für neues Portal). TMDB-Cache bleibt erhalten (titel-basiert, wiederverwendbar). Ordner-Filter-Auswahl wird ebenfalls zurückgesetzt. Info-Dialog erklärt was passiert ist. |

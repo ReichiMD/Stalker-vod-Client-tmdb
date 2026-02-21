@@ -333,16 +333,35 @@ class TmdbClient:
         self.__cache[key] = {'data': data, 'ts': time.time()}
 
     def __load_cache(self):
-        """Load JSON cache from disk"""
+        """Load JSON cache from disk and prune expired entries.
+
+        Entries older than ``cache_days`` are removed immediately so the
+        cache file does not grow indefinitely.  When ``cache_days == 0``
+        (never expire) no pruning takes place.
+        """
+        cache = {}
         try:
             if xbmcvfs.exists(self.__cache_path):
                 with xbmcvfs.File(self.__cache_path, 'r') as fh:
                     content = fh.read()
                     if content:
-                        return json.loads(content)
+                        cache = json.loads(content)
         except Exception as exc:
             Logger.warn('TMDB cache load failed: {}'.format(exc))
-        return {}
+            return {}
+
+        # --- Prune expired entries on load ---
+        if self.__cache_days > 0 and cache:
+            now = time.time()
+            max_age_secs = self.__cache_days * 86400
+            expired = [k for k, v in cache.items()
+                       if (now - v.get('ts', 0)) > max_age_secs]
+            for k in expired:
+                del cache[k]
+            if expired:
+                Logger.debug('TMDB cache: {} abgelaufene Eintraege entfernt'.format(len(expired)))
+
+        return cache
 
     def __persist_cache(self):
         """Write cache to disk"""
