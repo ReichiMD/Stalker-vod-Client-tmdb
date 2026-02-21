@@ -214,28 +214,31 @@ Das würde die Ladezeit für unkachet Filme verdoppeln (~600ms statt ~300ms pro 
 | Setting-ID | Typ | Standard | Bedeutung |
 |---|---|---|---|
 | `cache_enabled` | boolean | `true` | Lokalen Stalker-Cache verwenden (ja/nein) |
-| `load_all_pages` | boolean | `false` | Alle Filme auf einmal anzeigen statt paginiert |
+| `page_size` | integer (Dropdown) | `2` | Filme pro Seite: 1 (~20), 2 (~40), 5 (~100), 9999 (Alle auf einmal) |
 | `stalker_cache_days` | integer (Dropdown) | `1` | Cache-Gültigkeitsdauer: 1 Tag, 3 Tage, 1 Woche, Nie ablaufen |
 | `update_new_data` | action | – | Portal-Daten in den Cache laden (smart: nur neue hinzufügen) |
 
 ---
 
-### Verhaltensmatrix: `cache_enabled` × `load_all_pages`
+### Verhaltensmatrix: `cache_enabled` × `page_size`
 
-| `cache_enabled` | `load_all_pages` | Ergebnis beim Ordner öffnen |
+| `cache_enabled` | `page_size` | Ergebnis beim Ordner öffnen |
 |---|---|---|
-| AUS | AUS | Seitenweise vom Server (~20 Filme, Weiter/Zurück-Schaltflächen) |
-| AUS | EIN | Alle Seiten vom Server auf einmal (langsam beim ersten Mal) |
-| **EIN** | AUS | Seitenweise vom Server – kein Cache-Nutzen für normale Ansicht |
-| **EIN** | EIN | Alle Filme sofort aus lokalem Cache ✓ (falls Cache leer → alle Seiten vom Server) |
+| AUS | 1 (Standard) | ~20 Filme vom Server, Weiter/Zurück-Schaltflächen |
+| AUS | 2 (~40) | ~40 Filme vom Server, Weiter/Zurück-Schaltflächen |
+| AUS | 5 (~100) | ~100 Filme vom Server, Weiter/Zurück-Schaltflächen |
+| AUS | Alle | Alle Seiten vom Server auf einmal (langsam beim ersten Mal) |
+| **EIN** | 1–5 | Seitenweise vom Server (Cache wird bei Paginierung nicht genutzt) |
+| **EIN** | **Alle** | **Alle Filme sofort aus lokalem Cache ✓** (falls Cache leer → alle Seiten vom Server) |
 
-> **Empfehlung:** Beide EIN = schnellste Nutzererfahrung nach dem ersten Refresh.
+> **Empfehlung:** Cache EIN + Alle auf einmal = schnellste Nutzererfahrung nach dem ersten Refresh.
+> Auf schwachen Geräten (z.B. Android-Stick, 1 GB RAM): Cache EIN + 2 oder 5 Seiten empfohlen.
 
 **Wo gesetzt:** `globals.py::init_globals()` → `self.addon_config.max_page_limit` und `self.addon_config.cache_enabled`
 
 **Codelogik in `__list_vod` / `__list_series`:**
 ```python
-load_all = G.addon_config.max_page_limit >= 9999   # load_all_pages=true
+load_all = G.addon_config.max_page_limit >= 9999   # page_size=9999 (Alle auf einmal)
 use_cache = G.addon_config.cache_enabled
 if load_all and use_cache and not search_term.strip() and fav == '0':
     cached = StalkerCache(...).get_videos(...)
@@ -494,7 +497,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 | Setting-ID | Typ | Standard | Bedeutung |
 |---|---|---|---|
 | `cache_enabled` | boolean | `true` | Lokalen Cache verwenden (aus = immer Server) |
-| `load_all_pages` | boolean | `false` | Alle Filme auf einmal anzeigen (nur aktiv bei Cache=an) |
+| `page_size` | integer (Dropdown) | `2` | Filme pro Seite: Standard (~20), 2 Seiten (~40), 5 Seiten (~100), Alle auf einmal |
 
 **Gruppe: Portal-Cache**
 
@@ -520,9 +523,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/portal-settings-cache-refactor-T3TRf`
+- Branch: `claude/brainstorm-improvements-ZpXPB`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.1.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.2.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -530,6 +533,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Filme pro Seite (Dropdown) | `claude/brainstorm-improvements-ZpXPB` | Boolean-Toggle "Alle Filme auf einmal anzeigen" durch Dropdown "Filme pro Seite" ersetzt. 4 Optionen: Standard (~20), 2 Seiten (~40, bisheriger Standard), 5 Seiten (~100), Alle auf einmal. Schwache Geräte können kleinere Seitengrößen wählen. Keine Cache-Dependency mehr – Dropdown immer verfügbar. |
 | Settings-Umbau Portal-Cache | `claude/portal-settings-cache-refactor-T3TRf` | "Alle Daten aktualisieren" + "Nur neue Inhalte" durch einen Button "Portal-Daten in den Cache laden" ersetzt. Smart: lädt alles beim ersten Mal, danach nur neue Inhalte. In die Portal-Cache-Gruppe verschoben. |
 | Portal-Cache-Gültigkeitsdauer | `claude/portal-settings-cache-refactor-T3TRf` | Neues Dropdown: 1 Tag (Standard), 3 Tage, 1 Woche, Nie ablaufen. StalkerCache akzeptiert `cache_days` Parameter. Hintergrund-Service nutzt konfigurierte Gültigkeit. |
 | Schalter-Umbenennung | `claude/portal-settings-cache-refactor-T3TRf` | "Alle Seiten auf einmal laden" → "Alle Filme auf einmal anzeigen" für bessere Verständlichkeit. |
@@ -763,7 +767,7 @@ Dialog 4: Rating-Auswahl
 | Settings: "Basis-Daten" Gruppe | `resources/settings.xml` group `tmdb_fields_group` | Fertig |
 | Settings: "Erweiterte Daten" Gruppe | `resources/settings.xml` group `tmdb_extended_group` | Leer (nur Info-Text) |
 | String-IDs bis 32187 | `strings.po` (en + de) | Belegt |
-| Nächste freie String-ID | 32194 | Frei (32188–32193 = Portal-Cache-Gültigkeit) |
+| Nächste freie String-ID | 32200 | Frei (32194–32199 = Filme pro Seite Dropdown) |
 | `TmdbConfig.use_certification` | `lib/globals.py` | Noch nicht angelegt |
 | TMDB Detail-API-Call | `lib/tmdb.py` | Noch nicht implementiert |
 | FSK im Filter-Dialog | `lib/addon.py` | Noch nicht implementiert |
