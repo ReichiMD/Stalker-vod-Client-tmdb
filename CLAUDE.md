@@ -296,10 +296,18 @@ automatische Refresh nicht ausgelöst.
 | Series-Kategorien | `stalker_cats_series.json` | konfigurierbar (Standard: 1 Monat) |
 | VOD-Videos (pro Kategorie) | `stalker_videos_vod_{id}.json` | konfigurierbar (Standard: 1 Monat) |
 | Series-Videos (pro Kategorie) | `stalker_videos_series_{id}.json` | konfigurierbar (Standard: 1 Monat) |
+| Portal-Identität | `last_portal.json` | permanent (Server + MAC für Wechsel-Erkennung) |
 
 Alle Dateien liegen in `{kodi_profile}/plugin.video.stalkervod.tmdb/`.
 Gültigkeitsdauer wird über `stalker_cache_days` konfiguriert (1 Monat, 3 Monate, Nie löschen).
 `StalkerCache(cache_dir, cache_days=N)` akzeptiert den Parameter. `cache_days=0` → nie löschen.
+
+**Portal-Wechsel-Erkennung:** `last_portal.json` speichert Server-Adresse + MAC-Adresse.
+Beim Kodi-Start und bei jeder Einstellungsänderung wird verglichen. Bei Änderung:
+- Alle `stalker_*.json` Dateien werden automatisch gelöscht (portal-spezifisch)
+- Alle `folder_filter_*.json` Dateien werden gelöscht (portal-spezifisch)
+- `tmdb_cache.json` bleibt erhalten (titel-basiert, portal-unabhängig wiederverwendbar)
+- Info-Dialog erklärt dem Nutzer was passiert ist
 
 ---
 
@@ -523,9 +531,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/check-media-view-restrictions-LHujs`
+- Branch: `claude/cache-sync-completion-CoPCD`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.4.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.5.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -533,6 +541,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Cache-Sync Abschlussdialog | `claude/cache-sync-completion-CoPCD` | Nach vollständigem Cache-Sync erscheint OK-Dialog: "X neue Inhalte hinzugefügt – Cache ist aktuell" oder "Keine neuen Inhalte – Cache ist bereits aktuell". Im Silent-Modus wird eine kurze Benachrichtigung angezeigt. |
+| Vordergrund/Hintergrund-Wahl | `claude/cache-sync-completion-CoPCD` | Vor dem Daten-Laden wird gefragt ob mit Fortschrittsanzeige oder im Hintergrund geladen werden soll. Hintergrund-Modus läuft lautlos und zeigt am Ende eine kurze Notification. |
+| Portal-Wechsel-Erkennung | `claude/cache-sync-completion-CoPCD` | Automatische Erkennung wenn Server-Adresse oder MAC sich ändert. Stalker-Cache wird automatisch gelöscht (portal-spezifisch, wertlos für neues Portal). TMDB-Cache bleibt erhalten (titel-basiert, wiederverwendbar). Ordner-Filter-Auswahl wird ebenfalls zurückgesetzt. Info-Dialog erklärt was passiert ist. |
 | Korrekte Kodi-Medientypen | `claude/check-media-view-restrictions-LHujs` | setContent und setMediaType für alle Ansichten korrigiert: VOD='movies', Serien='tvshows', Staffeln='seasons', Episoden='episodes'. Serien-Items nutzen jetzt mediaType 'tvshow' statt 'season'. Episoden immer 'episode'. Suche und Filter setzen Content-Type korrekt. |
 | Portal-Cache wie TMDB-Cache | `claude/fix-filter-cache-settings-IKQX4` | Portal-Cache-Gültigkeitsdauer an TMDB-Cache angeglichen: 1 Monat (30 Tage, neuer Standard), 3 Monate (90 Tage), Nie löschen. Alte Werte (1 Tag, 3 Tage, 1 Woche) werden automatisch auf den neuen Standard migriert. |
 | Filter: "Alle" Option in Kombination | `claude/fix-filter-cache-settings-IKQX4` | Im Kombinations-Filter ("Alle Kriterien") wird jetzt bei Genre, Jahr und Bewertung ganz oben "Alle Genres" / "Alle Jahre" / "Alle Bewertungen" angezeigt. Damit kann man einzelne Kriterien überspringen ohne den ganzen Filter abzubrechen. |
@@ -771,7 +782,7 @@ Dialog 4: Rating-Auswahl
 | Settings: "Basis-Daten" Gruppe | `resources/settings.xml` group `tmdb_fields_group` | Fertig |
 | Settings: "Erweiterte Daten" Gruppe | `resources/settings.xml` group `tmdb_extended_group` | Leer (nur Info-Text) |
 | String-IDs bis 32187 | `strings.po` (en + de) | Belegt |
-| Nächste freie String-ID | 32200 | Frei (32194–32199 = Filme pro Seite Dropdown) |
+| Nächste freie String-ID | 32205 | Frei (32200–32204 = Cache-Sync + Portal-Wechsel) |
 | `TmdbConfig.use_certification` | `lib/globals.py` | Noch nicht angelegt |
 | TMDB Detail-API-Call | `lib/tmdb.py` | Noch nicht implementiert |
 | FSK im Filter-Dialog | `lib/addon.py` | Noch nicht implementiert |

@@ -27,6 +27,7 @@ class BackgroundService(Monitor):
         if self.waitForAbort(5):
             return
 
+        self._check_portal_changed()
         self._check_daily_cache_refresh()
 
         while not self.abortRequested():
@@ -35,6 +36,27 @@ class BackgroundService(Monitor):
                 break
 
         Logger.debug('Service stopped')
+
+    def _check_portal_changed(self):
+        """Detect portal switch and auto-clear the Stalker cache if needed."""
+        addon = xbmcaddon.Addon()
+        server = addon.getSetting('server_address')
+        mac = addon.getSetting('mac_address')
+        if not server or not mac:
+            return  # Not configured yet
+
+        profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+        from .stalker_cache import StalkerCache
+        changed = StalkerCache.check_portal_changed(profile, server, mac)
+        if changed:
+            import xbmcgui
+            xbmcgui.Dialog().ok(
+                'Portal gewechselt',
+                'Die Portal-Adresse oder MAC-Adresse hat sich geändert.[CR][CR]'
+                'Der Portal-Cache wurde automatisch gelöscht.[CR]'
+                'TMDB-Daten bleiben erhalten und werden für das '
+                'neue Portal wiederverwendet.'
+            )
 
     def _check_daily_cache_refresh(self):
         """Trigger a silent background refresh if the Stalker data cache is stale."""
@@ -74,7 +96,7 @@ class BackgroundService(Monitor):
         No automatic data fetch on first setup – the user should configure
         folder filters first before loading data.
         """
-        pass
+        self._check_portal_changed()
 
 
 class PlayerMonitor(Player):

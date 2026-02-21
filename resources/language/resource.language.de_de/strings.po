@@ -459,3 +459,23 @@ msgstr "5 Seiten (~100 Filme)"
 msgctxt "#32199"
 msgid "All at once"
 msgstr "Alle auf einmal"
+
+msgctxt "#32200"
+msgid "How should the data be loaded?"
+msgstr "Wie sollen die Daten geladen werden?"
+
+msgctxt "#32201"
+msgid "With progress display"
+msgstr "Mit Fortschrittsanzeige"
+
+msgctxt "#32202"
+msgid "In the background"
+msgstr "Im Hintergrund"
+
+msgctxt "#32203"
+msgid "Cache is up to date"
+msgstr "Cache ist aktuell"
+
+msgctxt "#32204"
+msgid "Portal changed"
+msgstr "Portal gewechselt"
