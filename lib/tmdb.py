@@ -106,6 +106,40 @@ class TmdbClient:
         self.__to_cache(cache_key, result)
         return result
 
+    def get_tv_details(self, tmdb_id):
+        """Fetch TV show details (season list with posters/overviews).
+
+        Returns a dict with 'seasons' list or None.
+        Raises TmdbRateLimitError if TMDB blocks us repeatedly.
+        """
+        if self._aborted:
+            return None
+        self.__ensure_cache_path()
+        cache_key = 'tv_detail:{}'.format(tmdb_id)
+        cached = self.__from_cache(cache_key)
+        if cached is not _CACHE_MISS:
+            return cached
+        result = self.__fetch_tv_details(tmdb_id)
+        self.__to_cache(cache_key, result)
+        return result
+
+    def get_season_details(self, tmdb_id, season_number):
+        """Fetch season details (episode list with titles/plots/stills).
+
+        Returns a dict with 'episodes' list or None.
+        Raises TmdbRateLimitError if TMDB blocks us repeatedly.
+        """
+        if self._aborted:
+            return None
+        self.__ensure_cache_path()
+        cache_key = 'tv_season:{}:{}'.format(tmdb_id, season_number)
+        cached = self.__from_cache(cache_key)
+        if cached is not _CACHE_MISS:
+            return cached
+        result = self.__fetch_season_details(tmdb_id, season_number)
+        self.__to_cache(cache_key, result)
+        return result
+
     def get_genre_map(self, media_type='movie'):
         """Return a dict {genre_id_str: genre_name} for movies or TV shows.
 
@@ -227,6 +261,55 @@ class TmdbClient:
             genre_map = self.get_genre_map('tv')
             return self.__parse_tv(results[0], genre_map)
         return None
+
+    def __fetch_tv_details(self, tmdb_id):
+        """Fetch /tv/{id} from TMDB – returns season list with posters."""
+        url = '{}/tv/{}'.format(TMDB_API_BASE, tmdb_id)
+        params = {'api_key': self.__api_key, 'language': self.__language}
+        response = self.__get(url, params)
+        if response is None:
+            return None
+        data = response.json()
+        seasons = []
+        for s in data.get('seasons', []):
+            seasons.append({
+                'season_number': s.get('season_number', 0),
+                'name': s.get('name', ''),
+                'overview': s.get('overview', ''),
+                'poster': (TMDB_IMAGE_BASE + s['poster_path']) if s.get('poster_path') else None,
+                'episode_count': s.get('episode_count', 0),
+            })
+        return {
+            'tmdb_id': str(tmdb_id),
+            'seasons': seasons,
+            'overview': data.get('overview', ''),
+        }
+
+    def __fetch_season_details(self, tmdb_id, season_number):
+        """Fetch /tv/{id}/season/{nr} from TMDB – returns episode list."""
+        url = '{}/tv/{}/season/{}'.format(TMDB_API_BASE, tmdb_id, season_number)
+        params = {'api_key': self.__api_key, 'language': self.__language}
+        response = self.__get(url, params)
+        if response is None:
+            return None
+        data = response.json()
+        episodes = []
+        for ep in data.get('episodes', []):
+            episodes.append({
+                'episode_number': ep.get('episode_number', 0),
+                'name': ep.get('name', ''),
+                'overview': ep.get('overview', ''),
+                'still': (TMDB_IMAGE_BASE + ep['still_path']) if ep.get('still_path') else None,
+                'rating': float(ep.get('vote_average', 0)),
+                'votes': int(ep.get('vote_count', 0)),
+            })
+        return {
+            'season_number': season_number,
+            'name': data.get('name', ''),
+            'overview': data.get('overview', ''),
+            'poster': (TMDB_IMAGE_BASE + data['poster_path']) if data.get('poster_path') else None,
+            'episodes': episodes,
+        }
 
     # ------------------------------------------------------------------
     # Parsers

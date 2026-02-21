@@ -46,6 +46,8 @@ class TmdbConfig:
     api_key: str = None
     language: str = 'de-DE'
     cache_days: int = 30
+    load_mode: int = 0       # 0=always load, 1=cache only, 2=off in listings
+    enrich_series: bool = False  # fetch season/episode details from TMDB
     use_poster: bool = True
     use_fanart: bool = True
     use_plot: bool = True
@@ -142,6 +144,12 @@ class GlobalVariables:
             self.tmdb_config.cache_days = cache_days if cache_days >= 0 else 1
         except (ValueError, TypeError):
             self.tmdb_config.cache_days = 30
+        # load_mode: 0=always load (live), 1=cache only, 2=off in listings
+        try:
+            self.tmdb_config.load_mode = int(self.__addon.getSetting('tmdb_load_mode') or '0')
+        except (ValueError, TypeError):
+            self.tmdb_config.load_mode = 0
+        self.tmdb_config.enrich_series = self.__addon.getSetting('tmdb_enrich_series') == 'true'
         # Default true: only false when explicitly set to 'false'
         self.tmdb_config.use_poster  = self.__addon.getSetting('tmdb_use_poster')  != 'false'
         self.tmdb_config.use_fanart  = self.__addon.getSetting('tmdb_use_fanart')  != 'false'
