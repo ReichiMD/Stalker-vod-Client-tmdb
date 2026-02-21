@@ -47,13 +47,16 @@ class BackgroundService(Monitor):
         if addon.getSetting('cache_enabled') == 'false':
             return
 
-        # Read configured cache validity (days); 0 = never expire
+        # Read configured cache validity (days); 0 = never delete
         try:
-            cache_days = int(addon.getSetting('stalker_cache_days') or '1')
+            cache_days = int(addon.getSetting('stalker_cache_days') or '30')
         except (ValueError, TypeError):
-            cache_days = 1
+            cache_days = 30
+        # Migrate old values (1, 3, 7 days) to new default (30 days)
+        if cache_days > 0 and cache_days < 30:
+            cache_days = 30
         if cache_days == 0:
-            return  # Never expire – no automatic refresh
+            return  # Never delete – no automatic refresh
 
         profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
         from .stalker_cache import StalkerCache

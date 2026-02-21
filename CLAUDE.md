@@ -215,7 +215,7 @@ Das würde die Ladezeit für unkachet Filme verdoppeln (~600ms statt ~300ms pro 
 |---|---|---|---|
 | `cache_enabled` | boolean | `true` | Lokalen Stalker-Cache verwenden (ja/nein) |
 | `page_size` | integer (Dropdown) | `2` | Filme pro Seite: 1 (~20), 2 (~40), 5 (~100), 9999 (Alle auf einmal) |
-| `stalker_cache_days` | integer (Dropdown) | `1` | Cache-Gültigkeitsdauer: 1 Tag, 3 Tage, 1 Woche, Nie ablaufen |
+| `stalker_cache_days` | integer (Dropdown) | `30` | Cache-Gültigkeitsdauer: 1 Monat (30 Tage), 3 Monate (90 Tage), Nie löschen |
 | `update_new_data` | action | – | Portal-Daten in den Cache laden (smart: nur neue hinzufügen) |
 
 ---
@@ -277,7 +277,7 @@ vorhanden sind, werden nur neue Inhalte hinzugefügt. Vorhandene Daten bleiben i
 ### Automatischer Hintergrund-Refresh (Service)
 
 Der `BackgroundService.run()` prüft beim Kodi-Start ob der Stalker-Cache abgelaufen ist.
-Die Gültigkeitsdauer ist konfigurierbar über `stalker_cache_days` (Standard: 1 Tag).
+Die Gültigkeitsdauer ist konfigurierbar über `stalker_cache_days` (Standard: 30 Tage / 1 Monat).
 Falls abgelaufen → startet `update_new_data` im Silent-Modus lautlos im Hintergrund.
 
 **Respektiert `cache_enabled`:** Wenn der Nutzer den Cache deaktiviert hat, wird der
@@ -292,14 +292,14 @@ automatische Refresh nicht ausgelöst.
 
 | Inhalt | Datei | Gültigkeit |
 |---|---|---|
-| VOD-Kategorien | `stalker_cats_vod.json` | konfigurierbar (Standard: 1 Tag) |
-| Series-Kategorien | `stalker_cats_series.json` | konfigurierbar (Standard: 1 Tag) |
-| VOD-Videos (pro Kategorie) | `stalker_videos_vod_{id}.json` | konfigurierbar (Standard: 1 Tag) |
-| Series-Videos (pro Kategorie) | `stalker_videos_series_{id}.json` | konfigurierbar (Standard: 1 Tag) |
+| VOD-Kategorien | `stalker_cats_vod.json` | konfigurierbar (Standard: 1 Monat) |
+| Series-Kategorien | `stalker_cats_series.json` | konfigurierbar (Standard: 1 Monat) |
+| VOD-Videos (pro Kategorie) | `stalker_videos_vod_{id}.json` | konfigurierbar (Standard: 1 Monat) |
+| Series-Videos (pro Kategorie) | `stalker_videos_series_{id}.json` | konfigurierbar (Standard: 1 Monat) |
 
 Alle Dateien liegen in `{kodi_profile}/plugin.video.stalkervod.tmdb/`.
-Gültigkeitsdauer wird über `stalker_cache_days` konfiguriert (1 Tag, 3 Tage, 1 Woche, Nie ablaufen).
-`StalkerCache(cache_dir, cache_days=N)` akzeptiert den Parameter. `cache_days=0` → nie ablaufen.
+Gültigkeitsdauer wird über `stalker_cache_days` konfiguriert (1 Monat, 3 Monate, Nie löschen).
+`StalkerCache(cache_dir, cache_days=N)` akzeptiert den Parameter. `cache_days=0` → nie löschen.
 
 ---
 
@@ -503,7 +503,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Setting-ID | Typ | Bedeutung |
 |---|---|---|
-| `stalker_cache_days` | integer (Dropdown) | Cache-Gültigkeitsdauer: 1 Tag (Standard), 3 Tage, 1 Woche, Nie ablaufen |
+| `stalker_cache_days` | integer (Dropdown) | Cache-Gültigkeitsdauer: 1 Monat (Standard), 3 Monate, Nie löschen |
 | `stalker_show_cache_info` | action | Cache-Statistiken anzeigen (Kategorien, Filme, Größe, Alter) |
 | `update_new_data` | action | Portal-Daten in den Cache laden (smart: vorhandene bleiben, neue werden hinzugefügt) |
 | `stalker_clear_cache` | action | Portal-Cache komplett löschen (mit Bestätigungsdialog) |
@@ -523,9 +523,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/brainstorm-improvements-ZpXPB`
+- Branch: `claude/fix-filter-cache-settings-IKQX4`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.2.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.3.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -533,6 +533,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Portal-Cache wie TMDB-Cache | `claude/fix-filter-cache-settings-IKQX4` | Portal-Cache-Gültigkeitsdauer an TMDB-Cache angeglichen: 1 Monat (30 Tage, neuer Standard), 3 Monate (90 Tage), Nie löschen. Alte Werte (1 Tag, 3 Tage, 1 Woche) werden automatisch auf den neuen Standard migriert. |
+| Filter: "Alle" Option in Kombination | `claude/fix-filter-cache-settings-IKQX4` | Im Kombinations-Filter ("Alle Kriterien") wird jetzt bei Genre, Jahr und Bewertung ganz oben "Alle Genres" / "Alle Jahre" / "Alle Bewertungen" angezeigt. Damit kann man einzelne Kriterien überspringen ohne den ganzen Filter abzubrechen. |
+| Filter: Kein Hängenbleiben mehr | `claude/fix-filter-cache-settings-IKQX4` | Wenn der Filter keine Ergebnisse findet oder der Nutzer abbricht, wird endOfDirectory korrekt aufgerufen. Vorher blieb Kodi im Ladebildschirm hängen. |
 | Filme pro Seite (Dropdown) | `claude/brainstorm-improvements-ZpXPB` | Boolean-Toggle "Alle Filme auf einmal anzeigen" durch Dropdown "Filme pro Seite" ersetzt. 4 Optionen: Standard (~20), 2 Seiten (~40, bisheriger Standard), 5 Seiten (~100), Alle auf einmal. Schwache Geräte können kleinere Seitengrößen wählen. Keine Cache-Dependency mehr – Dropdown immer verfügbar. |
 | Settings-Umbau Portal-Cache | `claude/portal-settings-cache-refactor-T3TRf` | "Alle Daten aktualisieren" + "Nur neue Inhalte" durch einen Button "Portal-Daten in den Cache laden" ersetzt. Smart: lädt alles beim ersten Mal, danach nur neue Inhalte. In die Portal-Cache-Gruppe verschoben. |
 | Portal-Cache-Gültigkeitsdauer | `claude/portal-settings-cache-refactor-T3TRf` | Neues Dropdown: 1 Tag (Standard), 3 Tage, 1 Woche, Nie ablaufen. StalkerCache akzeptiert `cache_days` Parameter. Hintergrund-Service nutzt konfigurierte Gültigkeit. |
