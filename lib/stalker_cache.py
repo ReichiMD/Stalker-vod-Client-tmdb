@@ -65,6 +65,77 @@ class StalkerCache:
         self._write(_videos_path(self._dir, cat_type, cat_id), videos)
 
     # ------------------------------------------------------------------
+    # Portal identity tracking
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def check_portal_changed(cache_dir, server, mac):
+        """Check if the portal (server+MAC) has changed since the last run.
+
+        Compares the current server/mac with the stored values in
+        ``last_portal.json``.  If different, the Stalker cache files are
+        deleted (they are portal-specific and useless for a different
+        portal).  The TMDB cache is intentionally kept – it is
+        title-based and reusable across portals.
+
+        Returns True if a portal change was detected (and cache cleared).
+        """
+        import glob as globmod
+        portal_file = os.path.join(cache_dir, 'last_portal.json')
+        current = {'server': server, 'mac': mac}
+
+        # Read previous portal identity
+        previous = None
+        try:
+            if xbmcvfs.exists(portal_file):
+                with xbmcvfs.File(portal_file, 'r') as fh:
+                    content = fh.read()
+                    if content:
+                        previous = json.loads(content)
+        except Exception:
+            previous = None
+
+        # First run or file missing → just store current and return
+        if previous is None:
+            try:
+                with xbmcvfs.File(portal_file, 'w') as fh:
+                    fh.write(json.dumps(current))
+            except Exception:
+                pass
+            return False
+
+        # Compare
+        if previous.get('server') == server and previous.get('mac') == mac:
+            return False  # same portal, nothing to do
+
+        # Portal changed → delete all stalker_*.json files
+        Logger.info('Portal changed: {} → {}. Clearing Stalker cache.'.format(
+            previous.get('server', '?'), server))
+        pattern = os.path.join(cache_dir, 'stalker_*.json')
+        for fp in globmod.glob(pattern):
+            try:
+                xbmcvfs.delete(fp)
+            except Exception:
+                pass
+        # Also delete folder filter selections (portal-specific)
+        for ft in ('vod', 'series', 'tv'):
+            ff = os.path.join(cache_dir, 'folder_filter_{}.json'.format(ft))
+            try:
+                if xbmcvfs.exists(ff):
+                    xbmcvfs.delete(ff)
+            except Exception:
+                pass
+
+        # Save new portal identity
+        try:
+            with xbmcvfs.File(portal_file, 'w') as fh:
+                fh.write(json.dumps(current))
+        except Exception:
+            pass
+
+        return True
+
+    # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 

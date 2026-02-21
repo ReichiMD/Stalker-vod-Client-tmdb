@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.4" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.5" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,19 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.5  (2026-02-21)
+- New: Before loading portal data the user is asked whether to run with
+  progress display or in the background. Background mode runs silently
+  and shows a brief notification when finished.
+- New: After cache sync completes, an OK dialog confirms the result:
+  "X new items added – cache is up to date" or "No new items found –
+  cache is already up to date." Must be confirmed with OK.
+- New: Portal switch auto-detection. When the server address or MAC
+  address changes, the Stalker cache is automatically cleared (old
+  portal data is useless). TMDB metadata is intentionally kept – it is
+  title-based and reusable for the new portal. An info dialog explains
+  what happened. Folder filter selections are also reset.
+
 v0.3.4  (2026-02-21)
 - Fix: Kodi content types corrected for all views. VOD listings now use
   'movies' (enables poster wall), Series listings use 'tvshows', Seasons

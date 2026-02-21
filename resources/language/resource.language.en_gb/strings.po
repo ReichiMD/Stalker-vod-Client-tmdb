@@ -459,3 +459,23 @@ msgstr "5 pages (~100 items)"
 msgctxt "#32199"
 msgid "All at once"
 msgstr "All at once"
+
+msgctxt "#32200"
+msgid "How should the data be loaded?"
+msgstr "How should the data be loaded?"
+
+msgctxt "#32201"
+msgid "With progress display"
+msgstr "With progress display"
+
+msgctxt "#32202"
+msgid "In the background"
+msgstr "In the background"
+
+msgctxt "#32203"
+msgid "Cache is up to date"
+msgstr "Cache is up to date"
+
+msgctxt "#32204"
+msgid "Portal changed"
+msgstr "Portal changed"

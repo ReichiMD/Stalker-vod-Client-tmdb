@@ -957,6 +957,21 @@ class StalkerAddon:
         silent=True: no progress dialog, runs as background task (triggered
         by the automatic cache refresh on Kodi start).
         """
+        # Ask user: foreground (with progress) or background (silent)?
+        if not silent:
+            choice = xbmcgui.Dialog().yesno(
+                'Stalker VOD',
+                'Wie sollen die Daten geladen werden?',
+                yeslabel='Mit Fortschrittsanzeige',
+                nolabel='Im Hintergrund',
+            )
+            if not choice:
+                # User chose "Im Hintergrund" (nolabel) → re-trigger as silent
+                xbmc.executebuiltin(
+                    'RunPlugin(plugin://plugin.video.stalkervod.tmdb/?action=update_new_data&silent=1)'
+                )
+                return
+
         # Prevent screensaver from interrupting the update (e.g. Nvidia Shield)
         xbmc.executebuiltin('InhibitScreensaver(true)')
         stalker_cache = StalkerCache(G.addon_config.token_path, cache_days=G.addon_config.stalker_cache_days)
@@ -1061,9 +1076,28 @@ class StalkerAddon:
                         return
 
             G.addon_config.max_page_limit = original_limit
-            if not silent and not progress.iscanceled():
-                progress.update(100, '{} neue Inhalte hinzugefügt.'.format(total_new))
-                xbmc.sleep(1500)
+            canceled = not silent and progress.iscanceled()
+            if not silent and progress:
+                progress.close()
+                progress = None
+            if not canceled:
+                if not silent:
+                    if total_new > 0:
+                        xbmcgui.Dialog().ok(
+                            'Stalker VOD',
+                            '{} neue Inhalte hinzugefügt.[CR][CR]'
+                            'Der Cache ist jetzt aktuell.'.format(total_new)
+                        )
+                    else:
+                        xbmcgui.Dialog().ok(
+                            'Stalker VOD',
+                            'Keine neuen Inhalte gefunden.[CR][CR]'
+                            'Der Cache ist bereits aktuell.'
+                        )
+                else:
+                    xbmc.executebuiltin(
+                        'Notification(Stalker VOD, Cache ist aktuell., 3000)'
+                    )
         finally:
             xbmc.executebuiltin('InhibitScreensaver(false)')
             if not silent and progress:
