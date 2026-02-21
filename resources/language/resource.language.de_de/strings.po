@@ -435,3 +435,27 @@ msgstr "1 Woche (7 Tage)"
 msgctxt "#32193"
 msgid "Never expire"
 msgstr "Nie ablaufen"
+
+msgctxt "#32194"
+msgid "Items per page"
+msgstr "Filme pro Seite"
+
+msgctxt "#32195"
+msgid "How many items to load per page. Higher values show more films at once but may be slower on weak devices. 'All at once' loads the entire folder (fastest with cache, slowest without)."
+msgstr "Wie viele Filme pro Seite geladen werden. Höhere Werte zeigen mehr Filme auf einmal, können aber auf schwachen Geräten langsamer sein. 'Alle auf einmal' lädt den gesamten Ordner (mit Cache am schnellsten, ohne am langsamsten)."
+
+msgctxt "#32196"
+msgid "Standard (~20 items)"
+msgstr "Standard (~20 Filme)"
+
+msgctxt "#32197"
+msgid "2 pages (~40 items)"
+msgstr "2 Seiten (~40 Filme)"
+
+msgctxt "#32198"
+msgid "5 pages (~100 items)"
+msgstr "5 Seiten (~100 Filme)"
+
+msgctxt "#32199"
+msgid "All at once"
+msgstr "Alle auf einmal"

@@ -407,11 +407,10 @@ class StalkerAddon:
         plugin_category = 'VOD - ' + params['category'] if params.get('fav', '0') != '1' else 'VOD - ' + params['category'] + ' - FAVORITES'
         xbmcplugin.setPluginCategory(G.get_handle(), plugin_category)
         xbmcplugin.setContent(G.get_handle(), 'videos')
-        # load_all_pages=true (Variant 2): all films at once.
-        #   Cache ON  → instant from local cache (falls back to server if cache empty).
-        #   Cache OFF → all pages from server (slower).
-        # load_all_pages=false (Variant 1): paginated from server (~20 per page).
-        #   Cache is not used for pagination – server is always the source.
+        # page_size controls how many server pages are loaded at once:
+        #   1 = ~20 items, 2 = ~40 items, 5 = ~100 items, 9999 = all at once.
+        # When "all at once" + cache → instant from local cache.
+        # Otherwise → pages are fetched from server.
         videos = None
         load_all = G.addon_config.max_page_limit >= 9999
         use_cache = G.addon_config.cache_enabled
@@ -457,11 +456,10 @@ class StalkerAddon:
         plugin_category = 'SERIES - ' + params['category'] if params.get('fav', '0') != '1' else 'SERIES - ' + params['category'] + ' - FAVORITES'
         xbmcplugin.setPluginCategory(G.get_handle(), plugin_category)
         xbmcplugin.setContent(G.get_handle(), 'videos')
-        # load_all_pages=true (Variant 2): all series at once.
-        #   Cache ON  → instant from local cache (falls back to server if cache empty).
-        #   Cache OFF → all pages from server (slower).
-        # load_all_pages=false (Variant 1): paginated from server (~20 per page).
-        #   Cache is not used for pagination – server is always the source.
+        # page_size controls how many server pages are loaded at once:
+        #   1 = ~20 items, 2 = ~40 items, 5 = ~100 items, 9999 = all at once.
+        # When "all at once" + cache → instant from local cache.
+        # Otherwise → pages are fetched from server.
         series = None
         load_all = G.addon_config.max_page_limit >= 9999
         use_cache = G.addon_config.cache_enabled

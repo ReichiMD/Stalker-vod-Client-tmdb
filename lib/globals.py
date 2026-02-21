@@ -105,8 +105,12 @@ class GlobalVariables:
         self.addon_config.handle = int(sys.argv[1])
 
         # Init loading/cache settings
-        load_all_pages = self.__addon.getSetting('load_all_pages') == 'true'
-        self.addon_config.max_page_limit = 9999 if load_all_pages else 2
+        # page_size: 1 = ~20 items, 2 = ~40 items (default), 5 = ~100 items, 9999 = all
+        try:
+            page_size = int(self.__addon.getSetting('page_size') or '2')
+            self.addon_config.max_page_limit = page_size if page_size > 0 else 2
+        except (ValueError, TypeError):
+            self.addon_config.max_page_limit = 2
         # cache_enabled defaults to true; only false when explicitly set to 'false'
         self.addon_config.cache_enabled = self.__addon.getSetting('cache_enabled') != 'false'
         # stalker_cache_days: 0 = never expire, default 1 (24h)

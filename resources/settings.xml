@@ -168,15 +168,18 @@
                     <control type="toggle" />
                 </setting>
 
-                <setting id="load_all_pages" type="boolean" label="32108" help="32109">
+                <setting id="page_size" type="integer" label="32194" help="32195">
                     <level>0</level>
-                    <dependencies>
-                        <dependency type="enable">
-                            <condition operator="is" setting="cache_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                    <default>false</default>
-                    <control type="toggle" />
+                    <default>2</default>
+                    <constraints>
+                        <options>
+                            <option label="32196">1</option>
+                            <option label="32197">2</option>
+                            <option label="32198">5</option>
+                            <option label="32199">9999</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="integer" />
                 </setting>
             </group>
 

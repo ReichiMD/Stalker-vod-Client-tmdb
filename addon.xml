@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.1" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.2" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,13 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.2  (2026-02-21)
+- New: Configurable page size dropdown replaces the "Show all items at once"
+  toggle. Choose how many items to load per page: Standard (~20), 2 pages
+  (~40, previous default), 5 pages (~100), or All at once. Lower values
+  are faster on weak devices; higher values mean less scrolling/paging.
+  Setting is always available regardless of cache on/off.
+
 v0.3.1  (2026-02-20)
 - Redesign: "Refresh all data" and "Add new content only" buttons replaced
   by a single "Load portal data to cache" button in the Portal Cache group.
