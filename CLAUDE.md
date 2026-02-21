@@ -522,6 +522,8 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 | `tmdb_enabled` | boolean | TMDB-Anreicherung ein/aus |
 | `tmdb_api_key` | string (hidden) | Kostenloser Key von themoviedb.org |
 | `tmdb_language` | string | Sprach-Code für Metadaten, default `de-DE` |
+| `tmdb_load_mode` | integer (Dropdown) | 0=Immer laden (live), 1=Nur Cache (schnell), 2=Aus (kein TMDB in Listen) |
+| `tmdb_enrich_series` | boolean | Serien-Details: Staffel-Poster + Episoden-Details von TMDB (Standard: aus) |
 
 > **Hinweis:** Alle Aktions-Settings (`refresh_all_data`, `update_new_data`,
 > `folder_filter_select_*`, `tmdb_refresh_now`, `tmdb_clear_cache`, `tmdb_show_cache_info`)
@@ -531,9 +533,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/image-storage-cache-planning-6aDlL`
+- Branch: `claude/tmdb-data-loading-optimization-PrQr7`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.6.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.7.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -541,6 +543,8 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| TMDB Lade-Modus (3 Optionen) | `claude/tmdb-data-loading-optimization-PrQr7` | Neues Dropdown "TMDB Lade-Modus" mit 3 Optionen: "Immer laden (live)" = bisheriges Verhalten, "Nur Cache (schnell)" = zeigt nur bereits gecachte TMDB-Daten ohne API-Calls beim Browsen, "Aus (kein TMDB in Listen)" = keine TMDB-Daten in Filmlisten. Filter, Sync und Cache-Verwaltung funktionieren unabhängig davon. |
+| Erweiterte Serien-Details | `claude/tmdb-data-loading-optimization-PrQr7` | Neuer Toggle "Serien-Details (Staffeln + Episoden)" im TMDB-Tab (Standard: aus). Wenn aktiviert: Staffel-Poster und Übersichten von TMDB beim Klick auf eine Serie. Episoden-Titel, Handlung und Szenenbilder beim Klick auf eine Staffel. z.B. "E1 - Pilot" statt "Episode 1". Benötigt 1-2 Extra-API-Calls pro Serie/Staffel, wird gecacht. |
 | TMDB-Cache-Pruning | `claude/image-storage-cache-planning-6aDlL` | Abgelaufene Cache-Einträge werden beim Laden automatisch entfernt statt ewig in der Datei zu bleiben. Verhindert unbegrenztes Wachstum der tmdb_cache.json. Bei "Nie löschen" findet kein Pruning statt. |
 | Cache-Sync Abschlussdialog | `claude/cache-sync-completion-CoPCD` | Nach vollständigem Cache-Sync erscheint OK-Dialog: "X neue Inhalte hinzugefügt – Cache ist aktuell" oder "Keine neuen Inhalte – Cache ist bereits aktuell". Im Silent-Modus wird eine kurze Benachrichtigung angezeigt. |
 | Vordergrund/Hintergrund-Wahl | `claude/cache-sync-completion-CoPCD` | Vor dem Daten-Laden wird gefragt ob mit Fortschrittsanzeige oder im Hintergrund geladen werden soll. Hintergrund-Modus läuft lautlos und zeigt am Ende eine kurze Notification. |
@@ -781,9 +785,12 @@ Dialog 4: Rating-Auswahl
 | Filter-Logik (Genre/Jahr/Rating) | `lib/addon.py` `__run_filter()` etc. | Fertig |
 | Cache-Only-Lookup | `lib/tmdb.py` `get_cached_movie_info()` / `get_cached_tv_info()` | Fertig |
 | Settings: "Basis-Daten" Gruppe | `resources/settings.xml` group `tmdb_fields_group` | Fertig |
-| Settings: "Erweiterte Daten" Gruppe | `resources/settings.xml` group `tmdb_extended_group` | Leer (nur Info-Text) |
-| String-IDs bis 32187 | `strings.po` (en + de) | Belegt |
-| Nächste freie String-ID | 32205 | Frei (32200–32204 = Cache-Sync + Portal-Wechsel) |
+| Settings: "Erweiterte Daten" Gruppe | `resources/settings.xml` group `tmdb_extended_group` | Fertig (Serien-Details Toggle) |
+| String-IDs bis 32212 | `strings.po` (en + de) | Belegt |
+| Nächste freie String-ID | 32213 | Frei (32205–32212 = TMDB Lade-Modus + Serien-Details) |
+| `TmdbConfig.load_mode` | `lib/globals.py` | Fertig (0=immer, 1=nur cache, 2=aus) |
+| `TmdbConfig.enrich_series` | `lib/globals.py` | Fertig (Serien-Details an/aus) |
 | `TmdbConfig.use_certification` | `lib/globals.py` | Noch nicht angelegt |
-| TMDB Detail-API-Call | `lib/tmdb.py` | Noch nicht implementiert |
+| TMDB TV-Detail-API-Call | `lib/tmdb.py` | Fertig (`get_tv_details`, `get_season_details`) |
+| TMDB Detail-API-Call (FSK) | `lib/tmdb.py` | Noch nicht implementiert |
 | FSK im Filter-Dialog | `lib/addon.py` | Noch nicht implementiert |

@@ -277,6 +277,26 @@
                 </setting>
             </group>
 
+            <group id="tmdb_load_group" label="32212">
+                <setting id="tmdb_load_mode" type="integer" label="32205" help="32206">
+                    <level>0</level>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <default>0</default>
+                    <constraints>
+                        <options>
+                            <option label="32207">0</option>
+                            <option label="32208">1</option>
+                            <option label="32209">2</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="integer" />
+                </setting>
+            </group>
+
             <group id="tmdb_fields_group" label="32180">
                 <setting id="tmdb_use_poster" type="boolean" label="32147" help="32148">
                     <level>0</level>
@@ -335,7 +355,16 @@
             </group>
 
             <group id="tmdb_extended_group" label="32181">
-                <setting type="lsep" label="32182" />
+                <setting id="tmdb_enrich_series" type="boolean" label="32210" help="32211">
+                    <level>0</level>
+                    <dependencies>
+                        <dependency type="enable">
+                            <condition operator="is" setting="tmdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
             </group>
 
             <group id="tmdb_cache_group" label="32137">

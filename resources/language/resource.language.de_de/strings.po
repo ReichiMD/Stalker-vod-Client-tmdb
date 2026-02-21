@@ -479,3 +479,35 @@ msgstr "Cache ist aktuell"
 msgctxt "#32204"
 msgid "Portal changed"
 msgstr "Portal gewechselt"
+
+msgctxt "#32205"
+msgid "TMDB loading mode"
+msgstr "TMDB Lade-Modus"
+
+msgctxt "#32206"
+msgid "Controls when TMDB metadata is fetched while browsing. 'Always load' fetches from TMDB if not in cache (current behaviour). 'Cache only' shows only data already in the cache – no API calls, fast browsing. 'Off' shows no TMDB data in lists at all."
+msgstr "Bestimmt wann TMDB-Daten beim Durchblättern geladen werden. 'Immer laden' holt Daten von TMDB wenn nicht im Cache (bisheriges Verhalten). 'Nur Cache' zeigt nur bereits vorhandene Cache-Daten – keine API-Aufrufe, schnelles Browsen. 'Aus' zeigt keine TMDB-Daten in Listen."
+
+msgctxt "#32207"
+msgid "Always load (live)"
+msgstr "Immer laden (live)"
+
+msgctxt "#32208"
+msgid "Cache only (fast)"
+msgstr "Nur Cache (schnell)"
+
+msgctxt "#32209"
+msgid "Off (no TMDB in lists)"
+msgstr "Aus (kein TMDB in Listen)"
+
+msgctxt "#32210"
+msgid "Series details (seasons + episodes)"
+msgstr "Serien-Details (Staffeln + Episoden)"
+
+msgctxt "#32211"
+msgid "When opening a series, fetch season posters and episode details (title, plot, image) from TMDB. Requires 1-2 extra API calls per series/season. Data is cached. First visit takes slightly longer."
+msgstr "Beim Öffnen einer Serie werden Staffel-Poster und Episoden-Details (Titel, Handlung, Bild) von TMDB geladen. Benötigt 1-2 zusätzliche API-Aufrufe pro Serie/Staffel. Daten werden gecacht. Erster Besuch dauert etwas länger."
+
+msgctxt "#32212"
+msgid "Loading behaviour"
+msgstr "Lade-Verhalten"

@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.6" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.7" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,19 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.7  (2026-02-21)
+- New: TMDB loading mode dropdown with 3 options: "Always load (live)"
+  (current behaviour – fetches from TMDB if not cached), "Cache only
+  (fast)" (shows only already-cached data, no API calls while browsing),
+  and "Off (no TMDB in lists)" (no TMDB data in listings at all).
+  Allows fast portal-cover browsing while TMDB data stays available for
+  sync, filter and detail views.
+- New: Extended series details toggle (default: off). When enabled,
+  opening a series fetches season posters and overviews from TMDB.
+  Opening a season fetches episode titles, plots and still images.
+  Requires 1-2 additional API calls per series/season, data is cached.
+  Episodes show real names (e.g. "E1 - Pilot") instead of "Episode 1".
+
 v0.3.6  (2026-02-21)
 - Improvement: TMDB cache now prunes expired entries on load instead of
   keeping them forever. Previously, entries older than the configured

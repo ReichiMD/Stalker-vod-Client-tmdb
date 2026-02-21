@@ -88,10 +88,19 @@ def _get_tmdb_client():
 
 def _apply_tmdb_movie(list_item, video_info, title, year, stalker_poster):
     """Enrich a movie ListItem with TMDB data. Always calls setArt."""
+    load_mode = G.tmdb_config.load_mode
+    if load_mode == 2:  # Off in listings
+        list_item.setArt({'poster': stalker_poster})
+        return
     tmdb = _get_tmdb_client()
     if tmdb is not None:
         try:
-            info = tmdb.get_movie_info(title, year if year else None)
+            if load_mode == 1:  # Cache only
+                info = tmdb.get_cached_movie_info(title, year if year else None)
+                if info is _CACHE_MISS:
+                    info = None
+            else:  # Always load (live)
+                info = tmdb.get_movie_info(title, year if year else None)
         except TmdbRateLimitError:
             _show_rate_limit_notification()
             list_item.setArt({'poster': stalker_poster})
@@ -104,10 +113,19 @@ def _apply_tmdb_movie(list_item, video_info, title, year, stalker_poster):
 
 def _apply_tmdb_tv(list_item, video_info, title, year, stalker_poster):
     """Enrich a TV/Series ListItem with TMDB data. Always calls setArt."""
+    load_mode = G.tmdb_config.load_mode
+    if load_mode == 2:  # Off in listings
+        list_item.setArt({'poster': stalker_poster})
+        return
     tmdb = _get_tmdb_client()
     if tmdb is not None:
         try:
-            info = tmdb.get_tv_info(title, year if year else None)
+            if load_mode == 1:  # Cache only
+                info = tmdb.get_cached_tv_info(title, year if year else None)
+                if info is _CACHE_MISS:
+                    info = None
+            else:  # Always load (live)
+                info = tmdb.get_tv_info(title, year if year else None)
         except TmdbRateLimitError:
             _show_rate_limit_notification()
             list_item.setArt({'poster': stalker_poster})
@@ -478,17 +496,42 @@ class StalkerAddon:
         xbmcplugin.setPluginCategory(G.get_handle(), params['name'])
         xbmcplugin.setContent(G.get_handle(), 'seasons')
         seasons = Api.get_seasons(params['video_id'])
+
+        # Try to get TMDB season details (posters, overviews) if enabled
+        tmdb_seasons = None
+        tmdb_id = None
+        cfg = G.tmdb_config
+        if cfg.enabled and cfg.api_key and cfg.enrich_series:
+            tmdb = _get_tmdb_client()
+            if tmdb:
+                name_clean = _clean_lang_tags(params['name'])
+                info = tmdb.get_cached_tv_info(name_clean)
+                if info is not _CACHE_MISS and info is not None:
+                    tmdb_id = info.get('tmdb_id')
+                    if tmdb_id:
+                        try:
+                            tv_details = tmdb.get_tv_details(tmdb_id)
+                            if tv_details:
+                                tmdb_seasons = {s['season_number']: s for s in tv_details.get('seasons', [])}
+                        except TmdbRateLimitError:
+                            _show_rate_limit_notification()
+
         directory_items = []
         for season in seasons['data']:
             label = season['name']
             list_item = xbmcgui.ListItem(label=label, label2=label)
             match = re.match("^Season [0-9]+$", season['name'])
             name = params['name'] + ' ' + season['name']
+            season_no = None
             if match:
                 temp = season['name'].split(' ')
+                season_no = int(temp[-1])
                 name = params['name'] + ' S' + temp[-1]
-            url = G.get_plugin_url({'action': 'sub_folder', 'video_id': season['id'], 'start': season['series'][0],
-                                    'end': season['series'][-1], 'name': name, 'poster_url': params['poster_url']})
+            url_params = {'action': 'sub_folder', 'video_id': season['id'], 'start': season['series'][0],
+                          'end': season['series'][-1], 'name': name, 'poster_url': params['poster_url']}
+            if tmdb_id:
+                url_params['tmdb_id'] = tmdb_id
+            url = G.get_plugin_url(url_params)
             video_info = list_item.getVideoInfoTag()
             video_info.setMediaType('season')
             video_info.setTitle(season['name'])
@@ -498,9 +541,23 @@ class StalkerAddon:
             video_info.setPlotOutline(season.get('description', ''))
             actors = [xbmc.Actor(actor) for actor in season['actors'].split(',') if actor]  # pylint: disable=maybe-no-member
             video_info.setCast(actors)
-            list_item.setArt({'poster': params['poster_url']})
+
+            poster = params['poster_url']
+            # Apply TMDB season data if available
+            if tmdb_seasons and season_no is not None and season_no in tmdb_seasons:
+                ts = tmdb_seasons[season_no]
+                if ts.get('poster'):
+                    poster = ts['poster']
+                if ts.get('overview') and cfg.use_plot:
+                    video_info.setPlot(ts['overview'])
+                    video_info.setPlotOutline(ts['overview'])
+            list_item.setArt({'poster': poster})
             directory_items.append((url, list_item, True))
         xbmcplugin.addDirectoryItems(G.get_handle(), directory_items, len(seasons['data']))
+        # Persist TMDB cache if season details were fetched
+        tmdb = _get_tmdb_client()
+        if tmdb:
+            tmdb.flush()
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=False, cacheToDisc=False)
 
     @staticmethod
@@ -679,11 +736,45 @@ class StalkerAddon:
             name = ' '.join(temp[:-1])
         start = get_int_value(params, 'start')
         end = get_int_value(params, 'end')
+
+        # Try to get TMDB episode details if enabled
+        tmdb_episodes = None
+        tmdb_id = params.get('tmdb_id')
+        cfg = G.tmdb_config
+        if tmdb_id and season is not None and cfg.enabled and cfg.enrich_series:
+            tmdb = _get_tmdb_client()
+            if tmdb:
+                try:
+                    season_details = tmdb.get_season_details(tmdb_id, season)
+                    if season_details:
+                        tmdb_episodes = {ep['episode_number']: ep for ep in season_details.get('episodes', [])}
+                except TmdbRateLimitError:
+                    _show_rate_limit_notification()
+
         for episode_no in range(start, end + 1):
-            list_item = xbmcgui.ListItem(label='Episode ' + str(episode_no))
+            ep_label = 'Episode ' + str(episode_no)
+            ep_title = name
+            ep_plot = ''
+            ep_still = None
+
+            # Enrich with TMDB episode data
+            if tmdb_episodes and episode_no in tmdb_episodes:
+                ep_data = tmdb_episodes[episode_no]
+                if ep_data.get('name'):
+                    ep_label = 'E{} - {}'.format(episode_no, ep_data['name'])
+                    ep_title = ep_data['name']
+                if ep_data.get('overview') and cfg.use_plot:
+                    ep_plot = ep_data['overview']
+                if ep_data.get('still') and cfg.use_fanart:
+                    ep_still = ep_data['still']
+
+            list_item = xbmcgui.ListItem(label=ep_label)
             video_info = list_item.getVideoInfoTag()
-            video_info.setTitle(name)
-            video_info.setOriginalTitle(name)
+            video_info.setTitle(ep_title)
+            video_info.setOriginalTitle(ep_title)
+            if ep_plot:
+                video_info.setPlot(ep_plot)
+                video_info.setPlotOutline(ep_plot)
             if match:
                 video_info.setEpisode(episode_no)
                 video_info.setSeason(season)
@@ -691,10 +782,18 @@ class StalkerAddon:
                 video_info.setTvShowTitle(name)
             video_info.setMediaType('episode')
             list_item.setProperties({'IsPlayable': 'true'})
-            list_item.setArt({'poster': params['poster_url']})
+            art = {'poster': params['poster_url']}
+            if ep_still:
+                art['thumb'] = ep_still
+                art['fanart'] = ep_still
+            list_item.setArt(art)
             url = G.get_plugin_url({'action': 'play', 'video_id': params['video_id'], 'series': episode_no, 'season_no': season,
                                     'title': name, 'total_episodes': end, 'poster_url': params['poster_url']})
             xbmcplugin.addDirectoryItem(G.get_handle(), url, list_item, False)
+        # Persist TMDB cache if episode details were fetched
+        tmdb = _get_tmdb_client()
+        if tmdb:
+            tmdb.flush()
         xbmcplugin.endOfDirectory(G.get_handle(), succeeded=True, updateListing=False, cacheToDisc=False)
 
     def __search_vod(self, params):
