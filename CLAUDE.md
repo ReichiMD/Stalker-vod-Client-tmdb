@@ -523,9 +523,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/fix-filter-cache-settings-IKQX4`
+- Branch: `claude/check-media-view-restrictions-LHujs`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.3.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.4.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -533,6 +533,7 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Korrekte Kodi-Medientypen | `claude/check-media-view-restrictions-LHujs` | setContent und setMediaType für alle Ansichten korrigiert: VOD='movies', Serien='tvshows', Staffeln='seasons', Episoden='episodes'. Serien-Items nutzen jetzt mediaType 'tvshow' statt 'season'. Episoden immer 'episode'. Suche und Filter setzen Content-Type korrekt. |
 | Portal-Cache wie TMDB-Cache | `claude/fix-filter-cache-settings-IKQX4` | Portal-Cache-Gültigkeitsdauer an TMDB-Cache angeglichen: 1 Monat (30 Tage, neuer Standard), 3 Monate (90 Tage), Nie löschen. Alte Werte (1 Tag, 3 Tage, 1 Woche) werden automatisch auf den neuen Standard migriert. |
 | Filter: "Alle" Option in Kombination | `claude/fix-filter-cache-settings-IKQX4` | Im Kombinations-Filter ("Alle Kriterien") wird jetzt bei Genre, Jahr und Bewertung ganz oben "Alle Genres" / "Alle Jahre" / "Alle Bewertungen" angezeigt. Damit kann man einzelne Kriterien überspringen ohne den ganzen Filter abzubrechen. |
 | Filter: Kein Hängenbleiben mehr | `claude/fix-filter-cache-settings-IKQX4` | Wenn der Filter keine Ergebnisse findet oder der Nutzer abbricht, wird endOfDirectory korrekt aufgerufen. Vorher blieb Kodi im Ladebildschirm hängen. |

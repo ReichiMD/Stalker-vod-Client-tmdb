@@ -407,7 +407,7 @@ class StalkerAddon:
         search_term = params.get('search_term', '')
         plugin_category = 'VOD - ' + params['category'] if params.get('fav', '0') != '1' else 'VOD - ' + params['category'] + ' - FAVORITES'
         xbmcplugin.setPluginCategory(G.get_handle(), plugin_category)
-        xbmcplugin.setContent(G.get_handle(), 'videos')
+        xbmcplugin.setContent(G.get_handle(), 'movies')
         # page_size controls how many server pages are loaded at once:
         #   1 = ~20 items, 2 = ~40 items, 5 = ~100 items, 9999 = all at once.
         # When "all at once" + cache → instant from local cache.
@@ -428,7 +428,7 @@ class StalkerAddon:
         """List Favorites Channels"""
         Logger.debug('List VOD Favorites {}'.format(params))
         xbmcplugin.setPluginCategory(G.get_handle(), 'VOD FAVORITES')
-        xbmcplugin.setContent(G.get_handle(), 'videos')
+        xbmcplugin.setContent(G.get_handle(), 'movies')
         videos = Api.get_vod_favorites(params['page'])
         StalkerAddon.__create_video_listing(videos, params)
 
@@ -436,7 +436,7 @@ class StalkerAddon:
     def __list_series_favorites(params):
         """List Favorites Channels"""
         xbmcplugin.setPluginCategory(G.get_handle(), 'SERIES FAVORITES')
-        xbmcplugin.setContent(G.get_handle(), 'videos')
+        xbmcplugin.setContent(G.get_handle(), 'tvshows')
         series = Api.get_series_favorites(params['page'])
         StalkerAddon.__create_series_listing(series, params)
 
@@ -456,7 +456,7 @@ class StalkerAddon:
         search_term = params.get('search_term', '')
         plugin_category = 'SERIES - ' + params['category'] if params.get('fav', '0') != '1' else 'SERIES - ' + params['category'] + ' - FAVORITES'
         xbmcplugin.setPluginCategory(G.get_handle(), plugin_category)
-        xbmcplugin.setContent(G.get_handle(), 'videos')
+        xbmcplugin.setContent(G.get_handle(), 'tvshows')
         # page_size controls how many server pages are loaded at once:
         #   1 = ~20 items, 2 = ~40 items, 5 = ~100 items, 9999 = all at once.
         # When "all at once" + cache → instant from local cache.
@@ -476,7 +476,7 @@ class StalkerAddon:
     def __list_season(params):
         """List season"""
         xbmcplugin.setPluginCategory(G.get_handle(), params['name'])
-        xbmcplugin.setContent(G.get_handle(), 'videos')
+        xbmcplugin.setContent(G.get_handle(), 'seasons')
         seasons = Api.get_seasons(params['video_id'])
         directory_items = []
         for season in seasons['data']:
@@ -534,7 +534,7 @@ class StalkerAddon:
                 url = G.get_plugin_url({'action': 'sub_folder', 'video_id': video['id'], 'start': video['series'][0], 'end': video['series'][-1],
                                         'name': name, 'poster_url': poster_url})
                 is_folder = True
-                video_info.setMediaType('season')
+                video_info.setMediaType('video')
             else:
                 url = G.get_plugin_url({'action': 'play', 'video_id': video['id'], 'series': 0, 'title': name, 'cmd': video.get('cmd', '')})
                 time = get_int_value(video, 'time')
@@ -603,7 +603,7 @@ class StalkerAddon:
                     poster_url = G.portal_config.portal_base_url + video['screenshot_uri']
             video_info = list_item.getVideoInfoTag()
             url = G.get_plugin_url({'action': 'season_listing', 'video_id': video['id'], 'name': name, 'poster_url': poster_url})
-            video_info.setMediaType('season')
+            video_info.setMediaType('tvshow')
 
             video_info.setTitle(name)
             video_info.setOriginalTitle(name)
@@ -670,7 +670,7 @@ class StalkerAddon:
         """List episodes for a series"""
         name = params['name']
         xbmcplugin.setPluginCategory(G.get_handle(), name)
-        xbmcplugin.setContent(G.get_handle(), 'videos')
+        xbmcplugin.setContent(G.get_handle(), 'episodes')
         temp = name.split(' ')
         match = re.match("^S[0-9]+$", temp[-1])
         season = None
@@ -688,10 +688,8 @@ class StalkerAddon:
                 video_info.setEpisode(episode_no)
                 video_info.setSeason(season)
                 video_info.setSortSeason(season)
-                video_info.setMediaType('episode')
                 video_info.setTvShowTitle(name)
-            else:
-                video_info.setMediaType('movie')
+            video_info.setMediaType('episode')
             list_item.setProperties({'IsPlayable': 'true'})
             list_item.setArt({'poster': params['poster_url']})
             url = G.get_plugin_url({'action': 'play', 'video_id': params['video_id'], 'series': episode_no, 'season_no': season,
@@ -736,6 +734,8 @@ class StalkerAddon:
             except Exception:
                 pass
         all_videos['total_items'] = len(all_videos['data'])
+        xbmcplugin.setPluginCategory(G.get_handle(), 'VOD - Suche: ' + search_term)
+        xbmcplugin.setContent(G.get_handle(), 'movies')
         params.update({'category': 'Alle Kategorien', 'update_listing': False, 'fav': '0', 'page': 1})
         StalkerAddon.__create_video_listing(all_videos, params)
 
@@ -772,6 +772,8 @@ class StalkerAddon:
             except Exception:
                 pass
         all_series['total_items'] = len(all_series['data'])
+        xbmcplugin.setPluginCategory(G.get_handle(), 'SERIES - Suche: ' + search_term)
+        xbmcplugin.setContent(G.get_handle(), 'tvshows')
         params.update({'category': 'Alle Kategorien', 'update_listing': False, 'fav': '0', 'page': 1})
         StalkerAddon.__create_series_listing(all_series, params)
 
@@ -811,6 +813,8 @@ class StalkerAddon:
             except Exception:
                 pass
         all_channels['total_items'] = len(all_channels['data'])
+        xbmcplugin.setPluginCategory(G.get_handle(), 'TV - Suche: ' + search_term)
+        xbmcplugin.setContent(G.get_handle(), 'videos')
         params.update({'category': 'Alle Genres', 'update_listing': False, 'fav': '0', 'page': 1})
         StalkerAddon.__create_tv_listing(all_channels, params)
 
@@ -1452,7 +1456,7 @@ class StalkerAddon:
         result = {'data': video_list, 'total_items': len(video_list), 'max_page_items': len(video_list)}
         label = 'VOD' if cat_type == 'vod' else 'SERIES'
         xbmcplugin.setPluginCategory(G.get_handle(), '{} FILTER: {}'.format(label, filter_desc))
-        xbmcplugin.setContent(G.get_handle(), 'videos')
+        xbmcplugin.setContent(G.get_handle(), 'movies' if cat_type == 'vod' else 'tvshows')
         if cat_type == 'vod':
             StalkerAddon.__create_video_listing(result, {
                 'category': 'Filter: ' + filter_desc,
