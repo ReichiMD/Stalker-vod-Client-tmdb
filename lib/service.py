@@ -3,7 +3,11 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
+import json
+import os
+import threading
 from urllib.parse import urlsplit, parse_qsl, urlencode
+import requests
 import xbmc
 import xbmcaddon
 import xbmcvfs
@@ -100,19 +104,22 @@ class BackgroundService(Monitor):
 
 
 class PlayerMonitor(Player):
-    """ A custom Player object to check subtitles """
+    """ A custom Player object with watchdog keepalive for Stalker portals """
+
+    KEEPALIVE_INTERVAL = 30  # seconds between watchdog pings
 
     def __init__(self):
         """ Initialises a custom Player object """
         self.__listen = False
         self.__av_started = False
         self.__path = None
+        self.__keepalive_timer = None
         Player.__init__(self)
 
     def onPlayBackStarted(self):  # pylint: disable=invalid-name
         """ Will be called when Kodi player starts """
         self.__path = getInfoLabel('Player.FilenameAndPath')
-        if not self.__path.startswith('plugin://plugin.video.stalkervod/'):
+        if not self.__path.startswith('plugin://plugin.video.stalkervod.tmdb/'):
             self.__listen = False
             return
         self.__listen = True
@@ -125,18 +132,20 @@ class PlayerMonitor(Player):
             return
         Logger.debug('Stalker Player: [onAVStarted] called')
         self.__av_started = True
+        self.__start_keepalive()
         params = dict(parse_qsl(urlsplit(self.__path).query))
         episode_no = get_int_value(params, 'series')
         total_episodes = get_int_value(params, 'total_episodes')
         if episode_no != 0 and episode_no < total_episodes:
             params.update({'series': episode_no + 1})
-            next_episode_url = '{}?{}'.format('plugin://plugin.video.stalkervod/', urlencode(params))
+            next_episode_url = '{}?{}'.format('plugin://plugin.video.stalkervod.tmdb/', urlencode(params))
             get_next_info_and_send_signal(params, next_episode_url)
 
     def onPlayBackError(self):  # pylint: disable=invalid-name
         """ Will be called when playback stops due to an error. """
         if not self.__listen:
             return
+        self.__stop_keepalive()
         self.__av_started = False
         self.__listen = False
         Logger.debug('Stalker Player: [onPlayBackError] called')
@@ -146,6 +155,7 @@ class PlayerMonitor(Player):
         if not self.__listen:
             return
         Logger.debug('Stalker Player: [onPlayBackEnded] called')
+        self.__stop_keepalive()
         self.__listen = False
         self.__av_started = False
 
@@ -153,6 +163,7 @@ class PlayerMonitor(Player):
         """ Will be called when [user] stops Kodi playing a file """
         if not self.__listen:
             return
+        self.__stop_keepalive()
         self.__listen = False
         if not self.__av_started:
             params = dict(parse_qsl(urlsplit(self.__path).query))
@@ -164,6 +175,90 @@ class PlayerMonitor(Player):
                 return
         self.__av_started = False
         Logger.debug('Stalker Player: [onPlayBackStopped] called')
+
+    # -- Watchdog keepalive --------------------------------------------------
+
+    def __start_keepalive(self):
+        """Start periodic watchdog keepalive pings to the Stalker portal."""
+        self.__stop_keepalive()
+        Logger.debug('Keepalive: starting (interval={}s)'.format(self.KEEPALIVE_INTERVAL))
+        self.__keepalive_tick()
+
+    def __stop_keepalive(self):
+        """Cancel the keepalive timer."""
+        if self.__keepalive_timer is not None:
+            self.__keepalive_timer.cancel()
+            self.__keepalive_timer = None
+            Logger.debug('Keepalive: stopped')
+
+    def __keepalive_tick(self):
+        """Timer callback: send watchdog ping and schedule next."""
+        if not self.__av_started or not self.__listen:
+            return
+        self.__send_watchdog_ping()
+        self.__keepalive_timer = threading.Timer(
+            self.KEEPALIVE_INTERVAL, self.__keepalive_tick
+        )
+        self.__keepalive_timer.daemon = True
+        self.__keepalive_timer.start()
+
+    def __send_watchdog_ping(self):
+        """Send a single watchdog keepalive ping to the Stalker portal."""
+        try:
+            addon = xbmcaddon.Addon()
+            server_address = addon.getSetting('server_address')
+            mac_address = addon.getSetting('mac_address')
+            serial_number = addon.getSetting('serial_number')
+            alt_ctx = addon.getSetting('alternative_context_path') == 'true'
+            if not server_address or not mac_address:
+                return
+
+            # Construct portal URL (same logic as globals.py)
+            split = urlsplit(server_address)
+            base_url = split.scheme + '://' + split.netloc
+            ctx_path = '/portal.php' if alt_ctx else '/server/load.php'
+            if server_address.endswith('/c/'):
+                portal_url = server_address.replace('/c/', '') + ctx_path
+            elif server_address.endswith('/c'):
+                portal_url = server_address.replace('/c', '') + ctx_path
+            else:
+                portal_url = base_url + '/stalker_portal' + ctx_path
+
+            # Read token from cache file
+            profile = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+            token_path = os.path.join(profile, 'token.json')
+            token = ''
+            try:
+                with xbmcvfs.File(token_path, 'r') as f:
+                    token_data = json.loads(f.read())
+                    token = token_data.get('value', '')
+            except (IOError, TypeError, ValueError, KeyError):
+                return
+
+            if not token:
+                return
+
+            headers = {
+                'Cookie': 'mac=' + mac_address,
+                'SN': serial_number,
+                'Authorization': 'Bearer ' + token,
+                'X-User-Agent': 'Model: MAG250; Link: WiFi',
+                'Referrer': server_address,
+                'User-Agent': 'Mozilla/5.0 (QtEmbedded; U; Linux; C) '
+                              'AppleWebKit/533.3 (KHTML, like Gecko) '
+                              'MAG200 stbapp ver: 2 rev: 250 Safari/533.3'
+            }
+            requests.get(
+                url=portal_url, headers=headers,
+                params={
+                    'type': 'watchdog', 'action': 'get_events',
+                    'init': '0', 'cur_play_type': '1', 'event_active_id': '0'
+                },
+                timeout=10
+            )
+            Logger.debug('Keepalive: watchdog ping sent')
+        except Exception as exc:
+            Logger.warn('Keepalive: watchdog ping failed: {}'.format(exc))
 
 
 def run():

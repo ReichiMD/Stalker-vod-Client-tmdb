@@ -396,6 +396,23 @@ erneuert den Cache automatisch nach 24h (respektiert Ordner-Filter).
 
 ## Bekannte Bugs & Fixes (heute gelöst)
 
+### 4. Streams brechen nach ~1 Minute ab (v0.3.8 behoben)
+**Problem:** Filme stoppten nach ca. 1 Minute Wiedergabe. In anderen IPTV-Apps funktionierte
+der gleiche Stream problemlos.
+**Ursache 1 (Hauptursache):** Kein Watchdog-Keepalive während der Wiedergabe. Stalker-Portale
+erwarten regelmäßige `type=watchdog&action=get_events`-Pings vom Client. Ohne diese Pings
+denkt das Portal, der Client sei weg, und killt den Stream nach ~60-120 Sekunden. Das Addon
+sendete den Watchdog nur einmal bei der Token-Erstellung, aber nie während der Wiedergabe.
+**Fix:** `PlayerMonitor` sendet jetzt alle 30 Sekunden einen Watchdog-Ping via Threading-Timer.
+Startet bei `onAVStarted`, stoppt bei Playback-Ende/Stop/Fehler. Die Portal-URL und der Token
+werden direkt aus den Addon-Settings und `token.json` gelesen (der Service-Prozess hat keinen
+Zugriff auf die `G`-Globalen des Addon-Prozesses).
+**Ursache 2:** `PlayerMonitor` prüfte auf die alte Addon-ID `plugin://plugin.video.stalkervod/`
+statt `plugin://plugin.video.stalkervod.tmdb/`. Dadurch wurde `__listen` nie auf `True` gesetzt
+und die gesamte Retry-Logik (bei fehlgeschlagenem Start) und Next-Episode-Erkennung waren tot.
+**Fix:** Alle `plugin://plugin.video.stalkervod/` Referenzen in `service.py` auf
+`plugin://plugin.video.stalkervod.tmdb/` korrigiert.
+
 ### 3. Einstellungen wirken erst nach Kodi-Neustart (v0.2.0 behoben)
 **Problem:** Änderungen an Einstellungen (z.B. TMDB aktivieren, API-Key, Poster/Fanart an/aus,
 Ordner-Filter, Portal-Adresse) hatten keine Wirkung ohne Kodi-Neustart.
@@ -533,9 +550,9 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 ## Für den nächsten Merge / nächste Session
 
-- Branch: `claude/tmdb-data-loading-optimization-PrQr7`
+- Branch: `claude/fix-video-streaming-B2sLb`
 - Alle Commits sind gepusht
-- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.7.zip`
+- ZIP für direkten Download: `dist/plugin.video.stalkervod.tmdb-0.3.8.zip`
 - ZIP-Erstellung ist jetzt Pflicht am Sitzungsende (siehe Abschnitt oben)
 - **Nach ZIP-Erstellung immer auch CLAUDE.md aktualisieren** (diese Datei!)
 
@@ -543,6 +560,8 @@ Alles was das Portal-Verhalten steuert: Filter, Cache, Datenaktualisierung.
 
 | Feature | Branch | Beschreibung |
 |---|---|---|
+| Watchdog-Keepalive bei Wiedergabe | `claude/fix-video-streaming-B2sLb` | Periodischer Watchdog-Ping (alle 30s) an das Stalker-Portal während der Wiedergabe. Verhindert dass das Portal den Stream nach ~1 Minute killt. Threading-basiert, startet bei onAVStarted, stoppt bei Stop/Ende/Fehler. |
+| PlayerMonitor Addon-ID Fix | `claude/fix-video-streaming-B2sLb` | PlayerMonitor prüfte auf alte Addon-ID `plugin.video.stalkervod` statt `plugin.video.stalkervod.tmdb`. Retry-Logik bei fehlgeschlagenem Playback-Start und Next-Episode-Erkennung funktionierten dadurch nie. |
 | TMDB Lade-Modus (3 Optionen) | `claude/tmdb-data-loading-optimization-PrQr7` | Neues Dropdown "TMDB Lade-Modus" mit 3 Optionen: "Immer laden (live)" = bisheriges Verhalten, "Nur Cache (schnell)" = zeigt nur bereits gecachte TMDB-Daten ohne API-Calls beim Browsen, "Aus (kein TMDB in Listen)" = keine TMDB-Daten in Filmlisten. Filter, Sync und Cache-Verwaltung funktionieren unabhängig davon. |
 | Erweiterte Serien-Details | `claude/tmdb-data-loading-optimization-PrQr7` | Neuer Toggle "Serien-Details (Staffeln + Episoden)" im TMDB-Tab (Standard: aus). Wenn aktiviert: Staffel-Poster und Übersichten von TMDB beim Klick auf eine Serie. Episoden-Titel, Handlung und Szenenbilder beim Klick auf eine Staffel. z.B. "E1 - Pilot" statt "Episode 1". Benötigt 1-2 Extra-API-Calls pro Serie/Staffel, wird gecacht. |
 | TMDB-Cache-Pruning | `claude/image-storage-cache-planning-6aDlL` | Abgelaufene Cache-Einträge werden beim Laden automatisch entfernt statt ewig in der Datei zu bleiben. Verhindert unbegrenztes Wachstum der tmdb_cache.json. Bei "Nie löschen" findet kein Pruning statt. |
