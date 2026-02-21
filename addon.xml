@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.2" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.3" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,18 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.3  (2026-02-21)
+- Change: Portal cache validity options now match TMDB cache: 1 month
+  (30 days, new default), 3 months (90 days), Never delete. Old values
+  (1 day, 3 days, 1 week) are automatically migrated to the new default.
+- Fix: Combination filter ("Alle Kriterien") now shows "Alle Genres",
+  "Alle Jahre" and "Alle Bewertungen" at the top of each dialog. Users
+  can skip individual filter criteria without cancelling the whole filter.
+- Fix: Filter no longer hangs on the loading screen when no results are
+  found or when the user cancels a dialog. Previously Kodi waited for
+  a directory listing that never came; now endOfDirectory is called
+  correctly in all cases.
+
 v0.3.2  (2026-02-21)
 - New: Configurable page size dropdown replaces the "Show all items at once"
   toggle. Choose how many items to load per page: Standard (~20), 2 pages

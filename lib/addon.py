@@ -24,6 +24,7 @@ _tmdb_client_singleton = None
 _rate_limit_notified = False  # show the rate-limit toast only once per plugin run
 _lang_tag_prefix_re = None
 _lang_tag_suffix_re = None
+_FILTER_ALL = object()  # sentinel: user chose "Alle" in a combination-filter dialog
 
 
 def _build_lang_tag_pattern():
@@ -1368,6 +1369,7 @@ class StalkerAddon:
                 'gib einen API-Key ein und führe[CR]'
                 '"Alle Daten aktualisieren" aus.'
             )
+            xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
             return
 
         # Collect all videos with their TMDB data from cache
@@ -1380,12 +1382,14 @@ class StalkerAddon:
                 'Bitte führe zuerst "Alle Daten aktualisieren"[CR]'
                 'in den Einstellungen aus.'
             )
+            xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
             return
 
         # Show filter type selection
         filter_labels = ['Genre', 'Jahr / Jahrzehnt', 'Mindestbewertung', 'Alle Kriterien (Kombination)']
         choice = xbmcgui.Dialog().select('Filtern nach:', filter_labels)
         if choice < 0:
+            xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
             return
 
         selected_genres = None
@@ -1396,25 +1400,39 @@ class StalkerAddon:
             # Genre only
             selected_genres = self.__ask_genre_filter(all_genres)
             if selected_genres is None:
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
                 return
         elif choice == 1:
             # Year only
             selected_year_range = self.__ask_year_filter(all_years)
             if selected_year_range is None:
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
                 return
         elif choice == 2:
             # Rating only
             selected_min_rating = self.__ask_rating_filter()
             if selected_min_rating is None:
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
                 return
         elif choice == 3:
-            # Combination: all three steps
-            selected_genres = self.__ask_genre_filter(all_genres)
+            # Combination: all three steps, each with "Alle" option at top
+            selected_genres = self.__ask_genre_filter(all_genres, include_all=True)
             if selected_genres is None:
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
                 return
-            selected_year_range = self.__ask_year_filter(all_years)
-            # Cancel on year/rating = skip that criterion (not abort)
-            selected_min_rating = self.__ask_rating_filter()
+            # [] (Alle Genres) → no genre filter, handled by __apply_filters
+
+            result_year = self.__ask_year_filter(all_years, include_all=True)
+            if result_year is None:
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
+                return
+            selected_year_range = None if result_year is _FILTER_ALL else result_year
+
+            result_rating = self.__ask_rating_filter(include_all=True)
+            if result_rating is None:
+                xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
+                return
+            selected_min_rating = None if result_rating is _FILTER_ALL else result_rating
 
         # Apply filters
         filtered = self.__apply_filters(
@@ -1423,6 +1441,7 @@ class StalkerAddon:
 
         if not filtered:
             xbmcgui.Dialog().ok('Stalker VOD', 'Keine Filme gefunden die allen Kriterien entsprechen.')
+            xbmcplugin.endOfDirectory(G.get_handle(), succeeded=False)
             return
 
         # Build description for plugin category
@@ -1489,21 +1508,34 @@ class StalkerAddon:
         return videos_with_tmdb, sorted(all_genres), sorted(all_years, reverse=True), sorted(all_ratings, reverse=True)
 
     @staticmethod
-    def __ask_genre_filter(all_genres):
-        """Show genre multiselect dialog. Returns list of selected genres or None to abort."""
+    def __ask_genre_filter(all_genres, include_all=False):
+        """Show genre multiselect dialog. Returns list of selected genres or None to abort.
+
+        include_all=True: prepends "Alle Genres" as first option.
+        If "Alle Genres" is among the selected items, returns [] (= no genre filter).
+        """
         if not all_genres:
             xbmcgui.Dialog().ok('Stalker VOD', 'Keine Genre-Daten im Cache vorhanden.')
             return None
-        selected = xbmcgui.Dialog().multiselect('Genres wählen (mehrere möglich)', all_genres)
+        options = list(all_genres)
+        if include_all:
+            options.insert(0, 'Alle Genres')
+        selected = xbmcgui.Dialog().multiselect('Genres wählen (mehrere möglich)', options)
         if selected is None:
             return None
-        return [all_genres[i] for i in selected]
+        if include_all and 0 in selected:
+            return []  # "Alle Genres" → no genre filter
+        return [options[i] for i in selected]
 
     @staticmethod
-    def __ask_year_filter(all_years):
-        """Show year/decade selection dialog. Returns (min_year, max_year) tuple or None."""
+    def __ask_year_filter(all_years, include_all=False):
+        """Show year/decade selection dialog. Returns (min_year, max_year) tuple or None.
+
+        include_all=True: prepends "Alle Jahre" as first option.
+        If "Alle Jahre" is selected, returns _FILTER_ALL sentinel.
+        """
         if not all_years:
-            return None
+            return _FILTER_ALL if include_all else None
         decade_options = [
             ('2020 – 2029', 2020, 2029),
             ('2010 – 2019', 2010, 2019),
@@ -1513,14 +1545,24 @@ class StalkerAddon:
             ('Vor 1980', 0, 1979),
         ]
         labels = [d[0] for d in decade_options]
+        if include_all:
+            labels.insert(0, 'Alle Jahre')
         choice = xbmcgui.Dialog().select('Zeitraum wählen', labels)
         if choice < 0:
             return None
+        if include_all:
+            if choice == 0:
+                return _FILTER_ALL
+            choice -= 1
         return (decade_options[choice][1], decade_options[choice][2])
 
     @staticmethod
-    def __ask_rating_filter():
-        """Show minimum rating selection dialog. Returns float minimum or None."""
+    def __ask_rating_filter(include_all=False):
+        """Show minimum rating selection dialog. Returns float minimum or None.
+
+        include_all=True: prepends "Alle Bewertungen" as first option.
+        If "Alle Bewertungen" is selected, returns _FILTER_ALL sentinel.
+        """
         options = [
             ('9+ (Herausragend)', 9.0),
             ('8+ (Sehr gut)', 8.0),
@@ -1529,9 +1571,15 @@ class StalkerAddon:
             ('5+ (Durchschnitt)', 5.0),
         ]
         labels = [o[0] for o in options]
+        if include_all:
+            labels.insert(0, 'Alle Bewertungen')
         choice = xbmcgui.Dialog().select('Mindestbewertung', labels)
         if choice < 0:
             return None
+        if include_all:
+            if choice == 0:
+                return _FILTER_ALL
+            choice -= 1
         return options[choice][1]
 
     @staticmethod

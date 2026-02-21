@@ -186,13 +186,12 @@
             <group id="portal_cache_group" label="32183">
                 <setting id="stalker_cache_days" type="integer" label="32188" help="32189">
                     <level>0</level>
-                    <default>1</default>
+                    <default>30</default>
                     <constraints>
                         <options>
-                            <option label="32190">1</option>
-                            <option label="32191">3</option>
-                            <option label="32192">7</option>
-                            <option label="32193">0</option>
+                            <option label="32157">30</option>
+                            <option label="32158">90</option>
+                            <option label="32159">0</option>
                         </options>
                     </constraints>
                     <control type="list" format="integer" />

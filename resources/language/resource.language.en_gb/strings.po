@@ -417,8 +417,8 @@ msgid "Cache validity"
 msgstr "Cache validity"
 
 msgctxt "#32189"
-msgid "How long portal data (film lists) is kept before being considered stale. After expiry the data is refreshed automatically in the background. 'Never expire' keeps data until you manually refresh."
-msgstr "How long portal data (film lists) is kept before being considered stale. After expiry the data is refreshed automatically in the background. 'Never expire' keeps data until you manually refresh."
+msgid "How long portal data (film lists) is kept before being considered stale. After expiry the data is refreshed automatically in the background. 'Never delete' keeps data until you manually refresh."
+msgstr "How long portal data (film lists) is kept before being considered stale. After expiry the data is refreshed automatically in the background. 'Never delete' keeps data until you manually refresh."
 
 msgctxt "#32190"
 msgid "1 day (24 hours)"
