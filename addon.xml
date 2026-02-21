@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.7" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.8" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,16 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.8  (2026-02-21)
+- Fix: Streams no longer cut off after ~1 minute. Added periodic watchdog
+  keepalive pings (every 30s) during playback to keep the Stalker portal
+  session alive. Without these pings, the portal assumed the client
+  disconnected and killed the stream.
+- Fix: PlayerMonitor now recognizes streams from this addon (was checking
+  for old addon ID "plugin.video.stalkervod" instead of
+  "plugin.video.stalkervod.tmdb"). Retry logic on playback failure and
+  next-episode detection now work correctly.
+
 v0.3.7  (2026-02-21)
 - New: TMDB loading mode dropdown with 3 options: "Always load (live)"
   (current behaviour – fetches from TMDB if not cached), "Cache only
