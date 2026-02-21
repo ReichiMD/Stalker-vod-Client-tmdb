@@ -1,4 +1,4 @@
-<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.3" provider-name="ReichiMD">
+<addon id="plugin.video.stalkervod.tmdb" name="Stalker VOD Client + TMDB" version="0.3.4" provider-name="ReichiMD">
 	<requires>
 		<import addon="xbmc.python" version="3.0.1"/>
 		<import addon="script.module.requests" version="2.27.1"/>
@@ -24,6 +24,21 @@
 			<screenshot>resources/media/screenshot_4.png</screenshot>
 		</assets>
 		<news>
+v0.3.4  (2026-02-21)
+- Fix: Kodi content types corrected for all views. VOD listings now use
+  'movies' (enables poster wall), Series listings use 'tvshows', Seasons
+  use 'seasons', Episodes use 'episodes'. Previously all views used the
+  generic 'videos' type which prevented Kodi from showing the correct
+  skin-specific layouts (e.g. poster wall, episode list).
+- Fix: Media types corrected: Series items now use mediatype 'tvshow'
+  instead of 'season'. Episodes without season match now use 'episode'
+  instead of 'movie'. VOD items with sub-parts use 'video'.
+- Fix: Search across all categories now sets content type and plugin
+  category correctly. Previously these were missing for cross-category
+  searches (VOD, Series, TV).
+- Fix: Filter results now use the correct content type based on whether
+  VOD ('movies') or Series ('tvshows') is being filtered.
+
 v0.3.3  (2026-02-21)
 - Change: Portal cache validity options now match TMDB cache: 1 month
   (30 days, new default), 3 months (90 days), Never delete. Old values
